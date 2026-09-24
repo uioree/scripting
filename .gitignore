@@ -1,0 +1,19 @@
+# Изолированное виртуальное окружение
+.venv/
+venv/
+env/
+
+# База данных SQLite (локальные данные)
+*.db
+*.sqlite3
+
+# Кэш Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE и системные файлы
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
