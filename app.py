@@ -69,29 +69,47 @@ class Database:
     def __init__(self):
         self.use_turso = bool(TURSO_DATABASE_URL)
         if self.use_turso:
-            import libsql_client
-            self.client = libsql_client.create_client_sync(
-                url=TURSO_DATABASE_URL,
-                auth_token=TURSO_AUTH_TOKEN,
-            )
+            try:
+                import libsql_client
+                url = TURSO_DATABASE_URL.strip()
+                if url.startswith("libsql://"):
+                    url = url.replace("libsql://", "https://")
+                self.client = libsql_client.create_client_sync(
+                    url=url,
+                    auth_token=TURSO_AUTH_TOKEN.strip() if TURSO_AUTH_TOKEN else None,
+                )
+            except Exception as e:
+                print(f"[DB Warning] Turso client init failed: {e}. Falling back to SQLite.")
+                self.use_turso = False
 
     def execute(self, sql: str, params: Optional[Any] = None) -> DBResult:
         if self.use_turso:
-            p = list(params) if params is not None else None
-            res = self.client.execute(sql, p)
-            return DBResult(res.rows, res.last_insert_rowid, res.rows_affected)
+            try:
+                p = list(params) if params is not None else None
+                res = self.client.execute(sql, p)
+                return DBResult(res.rows, res.last_insert_rowid, res.rows_affected)
+            except Exception as e:
+                print(f"[DB Warning] Turso query error: {e}. Switching to local SQLite.")
+                self.use_turso = False
+                return self._execute_sqlite(sql, params)
         else:
-            with sqlite3.connect(DB_PATH) as conn:
-                conn.row_factory = sqlite3.Row
-                cur = conn.cursor()
-                cur.execute(sql, params or ())
-                rows = cur.fetchall()
-                conn.commit()
-                return DBResult(rows, cur.lastrowid, cur.rowcount)
+            return self._execute_sqlite(sql, params)
+
+    def _execute_sqlite(self, sql: str, params: Optional[Any] = None) -> DBResult:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute(sql, params or ())
+            rows = cur.fetchall()
+            conn.commit()
+            return DBResult(rows, cur.lastrowid, cur.rowcount)
 
     def close(self):
         if self.use_turso and hasattr(self, "client"):
-            self.client.close()
+            try:
+                self.client.close()
+            except Exception:
+                pass
 
 db = Database()
 
@@ -451,6 +469,6 @@ def read_root():
 
 if __name__ == "__main__":
     import uvicorn
-    host = os.getenv("HOST", "127.0.0.1")
+    host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run("app:app", host=host, port=port, reload=True)
+    uvicorn.run("app:app", host=host, port=port, reload=DEBUG)
