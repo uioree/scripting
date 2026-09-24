@@ -1,29 +1,23 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Элементы навигации и вкладок
     const tabLogin = document.getElementById('tab-login');
     const tabRegister = document.getElementById('tab-register');
     const authTabs = document.getElementById('auth-tabs');
     const formSubtitle = document.getElementById('form-subtitle');
     
-    // Формы
     const loginForm = document.getElementById('login-form');
     const registerForm = document.getElementById('register-form');
     const userDashboard = document.getElementById('user-dashboard');
     
-    // Кнопки отправки
     const loginBtn = document.getElementById('login-btn');
     const registerBtn = document.getElementById('register-btn');
     const logoutBtn = document.getElementById('logout-btn');
     
-    // Контейнер Toast
     const toastContainer = document.getElementById('toast-container');
     
-    // Элементы индикатора пароля
     const regPasswordInput = document.getElementById('reg-password');
     const passwordMeter = document.getElementById('password-meter');
     const meterText = document.getElementById('meter-text');
 
-    // === Переключение Вкладок ===
     function switchTab(target) {
         if (target === 'register') {
             tabRegister.classList.add('active');
@@ -40,14 +34,21 @@ document.addEventListener('DOMContentLoaded', () => {
             
             registerForm.classList.remove('active');
             loginForm.classList.add('active');
-            formSubtitle.textContent = 'Добро пожаловать в современный аккаунт';
+            formSubtitle.textContent = 'Добро пожаловать в систему';
         }
     }
 
     tabLogin.addEventListener('click', () => switchTab('login'));
     tabRegister.addEventListener('click', () => switchTab('register'));
 
-    // === Показать / Скрыть пароль ===
+    const forgotLink = document.querySelector('.forgot-link');
+    if (forgotLink) {
+        forgotLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showToast('Восстановление пароля пока недоступно', 'error');
+        });
+    }
+
     document.querySelectorAll('.toggle-password').forEach(btn => {
         btn.addEventListener('click', () => {
             const targetId = btn.getAttribute('data-target');
@@ -57,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const isPassword = input.type === 'password';
             input.type = isPassword ? 'text' : 'password';
 
-            // Обновляем SVG иконку
             btn.innerHTML = isPassword ? `
                 <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
@@ -72,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // === Оценка сложности пароля в реальном времени ===
     if (regPasswordInput) {
         regPasswordInput.addEventListener('input', () => {
             const val = regPasswordInput.value;
@@ -102,7 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // === Всплывающие уведомления (Toast) ===
     function showToast(message, type = 'success') {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
@@ -125,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     }
 
-    // === Отображение дашборда после входа/регистрации ===
     function showDashboard(user) {
         authTabs.style.display = 'none';
         loginForm.classList.remove('active');
@@ -139,7 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
         userDashboard.classList.add('active');
     }
 
-    // Выход из профиля
     logoutBtn.addEventListener('click', () => {
         userDashboard.classList.remove('active');
         authTabs.style.display = 'flex';
@@ -149,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Вы вышли из учетной записи', 'success');
     });
 
-    // === Отправка формы Регистрации ===
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -183,7 +178,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast(errorMsg, 'error');
             } else {
                 showToast(data.message || 'Регистрация успешна!', 'success');
-                // Сразу открываем профиль
                 showDashboard(data.user);
             }
         } catch (err) {
@@ -194,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // === Отправка формы Входа ===
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 

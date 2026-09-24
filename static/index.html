@@ -3,25 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura — Минималистичный портал авторизации</title>
-    <!-- Google Fonts: Plus Jakarta Sans -->
+    <title>Aura</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- Фоновые световые эффекты (Ambient Glow) -->
     <div class="ambient-glow glow-1"></div>
     <div class="ambient-glow glow-2"></div>
     <div class="ambient-glow glow-3"></div>
 
     <div class="page-container">
-        <!-- Toast уведомления -->
         <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
         <main class="auth-card">
-            <!-- Брендинг / Логотип -->
             <header class="brand-header">
                 <div class="brand-logo">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -29,17 +25,15 @@
                     </svg>
                 </div>
                 <h1 class="brand-title">Aura</h1>
-                <p class="brand-subtitle" id="form-subtitle">Добро пожаловать в современный аккаунт</p>
+                <p class="brand-subtitle" id="form-subtitle">Добро пожаловать в систему</p>
             </header>
 
-            <!-- Переключатель вкладок: Вход / Регистрация -->
             <nav class="auth-tabs" id="auth-tabs">
                 <button type="button" class="tab-btn active" id="tab-login" data-tab="login">Вход</button>
                 <button type="button" class="tab-btn" id="tab-register" data-tab="register">Регистрация</button>
                 <div class="tab-slider" id="tab-slider"></div>
             </nav>
 
-            <!-- Форма Входа -->
             <form id="login-form" class="auth-form active" novalidate>
                 <div class="input-group">
                     <label for="login-identifier">Имя пользователя или Email</label>
@@ -78,7 +72,6 @@
                 </button>
             </form>
 
-            <!-- Форма Регистрации -->
             <form id="register-form" class="auth-form" novalidate>
                 <div class="input-group">
                     <label for="reg-username">Имя пользователя</label>
@@ -118,7 +111,6 @@
                         </button>
                     </div>
 
-                    <!-- Индикатор надежности пароля -->
                     <div class="password-meter" id="password-meter">
                         <div class="meter-bars">
                             <div class="bar"></div>
@@ -136,7 +128,6 @@
                 </button>
             </form>
 
-            <!-- Профиль авторизованного пользователя (Dashboard state) -->
             <div id="user-dashboard" class="user-dashboard">
                 <div class="avatar-circle" id="dash-avatar">U</div>
                 <h2 class="dash-welcome">Успешный вход!</h2>
@@ -151,18 +142,17 @@
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">База данных:</span>
-                        <span class="detail-value badge-active">SQLite3 (Локально)</span>
+                        <span class="detail-value badge-active">SQLite3</span>
                     </div>
                 </div>
                 <button type="button" class="logout-btn" id="logout-btn">Выйти из профиля</button>
             </div>
 
-            <!-- Футер карточки -->
             <footer class="card-footer">
-                <p class="footer-note">Быстрый Python бэкенд на FastAPI &amp; SQLite</p>
+                <p class="footer-note">FastAPI &amp; SQLite</p>
                 <div class="api-link-wrap">
-                    <a href="/docs" target="_blank" class="docs-link" title="Интерактивная спецификация Swagger">
-                        Открыть Swagger API Документацию &rarr;
+                    <a href="/docs" target="_blank" class="docs-link">
+                        Swagger API &rarr;
                     </a>
                 </div>
             </footer>
