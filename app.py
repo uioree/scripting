@@ -8,7 +8,8 @@ import sqlite3
 from typing import Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
@@ -134,6 +135,24 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="Aura Auth", lifespan=lifespan)
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc: RequestValidationError):
+    messages = []
+    for err in exc.errors():
+        field = err.get("loc", [])[-1]
+        if field == "email":
+            messages.append("Введите корректный email адрес (например, alex@domain.com)")
+        elif field == "username":
+            messages.append("Имя пользователя должно содержать от 3 до 30 символов")
+        elif field == "password":
+            messages.append("Пароль должен содержать от 6 до 100 символов")
+        else:
+            messages.append(err.get("msg", "Некорректно заполнены данные"))
+    return JSONResponse(
+        status_code=422,
+        content={"detail": ". ".join(messages)},
+    )
 
 @app.post("/api/register", status_code=status.HTTP_201_CREATED)
 def register(data: RegisterRequest):

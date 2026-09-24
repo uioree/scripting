@@ -62,12 +62,31 @@ document.addEventListener('DOMContentLoaded', () => {
         return res;
     }
 
+    function formatErrorMessage(detail, fallback = 'Произошла ошибка') {
+        if (!detail) return fallback;
+        if (typeof detail === 'string') return detail;
+        if (Array.isArray(detail)) {
+            return detail.map(err => {
+                const field = err.loc ? err.loc[err.loc.length - 1] : '';
+                if (field === 'email') return 'Введите корректный email (например, name@domain.com)';
+                if (field === 'username') return 'Имя пользователя должно содержать от 3 до 30 символов';
+                if (field === 'password') return 'Пароль должен содержать минимум 6 символов';
+                return err.msg || 'Некорректные данные';
+            }).join('. ');
+        }
+        if (typeof detail === 'object') {
+            return detail.msg || detail.message || JSON.stringify(detail);
+        }
+        return String(detail);
+    }
+
     function showToast(message, type = 'success') {
+        const text = formatErrorMessage(message);
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.innerHTML = `
             <span class="toast-dot"></span>
-            <span class="toast-msg">${escapeHtml(message)}</span>
+            <span class="toast-msg">${escapeHtml(text)}</span>
         `;
         toastContainer.appendChild(toast);
 
@@ -214,6 +233,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!username || !email || !password) {
             showToast('Заполните все обязательные поля', 'error');
+            return;
+        }
+
+        if (username.length < 3) {
+            showToast('Имя пользователя должно содержать от 3 до 30 символов', 'error');
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showToast('Введите корректный email адрес (например, alex@domain.com)', 'error');
             return;
         }
 
