@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -12,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "database.db"
+DB_PATH = Path(os.getenv("DB_PATH", BASE_DIR / "database.db"))
 STATIC_DIR = BASE_DIR / "static"
 
 def init_db():
@@ -306,4 +307,6 @@ def read_root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
+    host = os.getenv("HOST", "127.0.0.1")
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("app:app", host=host, port=port, reload=True)
