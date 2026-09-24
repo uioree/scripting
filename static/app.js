@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const toastContainer = document.getElementById('toast-container');
 
     const dashLogoutBtn = document.getElementById('dash-logout-btn');
+    const lockVaultBtn = document.getElementById('lock-vault-btn');
+    const openGenBtn = document.getElementById('open-gen-btn');
+
     const toggleNewNoteBtn = document.getElementById('toggle-new-note-btn');
     const noteForm = document.getElementById('note-form');
     const cancelNoteBtn = document.getElementById('cancel-note-btn');
@@ -28,33 +31,233 @@ document.addEventListener('DOMContentLoaded', () => {
     const vaultSearch = document.getElementById('vault-search');
     const changePwdForm = document.getElementById('change-pwd-form');
 
+    const vaultLockOverlay = document.getElementById('vault-lock-overlay');
+    const vaultUnlockForm = document.getElementById('vault-unlock-form');
+    const lockPasswordInput = document.getElementById('lock-password-input');
+    const lockLogoutBtn = document.getElementById('lock-logout-btn');
+
+    const pwdGenModal = document.getElementById('pwd-gen-modal');
+    const closeGenModalBtn = document.getElementById('close-gen-modal-btn');
+    const genOutputText = document.getElementById('gen-output-text');
+    const copyGenPwdBtn = document.getElementById('copy-gen-pwd-btn');
+    const genLengthSlider = document.getElementById('gen-length');
+    const genLenVal = document.getElementById('gen-len-val');
+    const refreshGenBtn = document.getElementById('refresh-gen-btn');
+    const genUpper = document.getElementById('gen-upper');
+    const genLower = document.getElementById('gen-lower');
+    const genDigits = document.getElementById('gen-digits');
+    const genSymbols = document.getElementById('gen-symbols');
+
+    let currentUser = null;
+    let vaultEncryptionKey = null; // Stored strictly in RAM, never in localStorage/cookies
     let allNotes = [];
     let currentFilter = 'all';
     let searchQuery = '';
 
-    function getToken() {
-        return localStorage.getItem('aura_token');
+    let clipboardWipeTimeout = null;
+    let inactivityTimer = null;
+    const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes auto-lock
+
+    // === Zero-Knowledge Web Crypto Utilities ===
+
+    async function deriveMasterKeys(password, saltHex) {
+        const enc = new TextEncoder();
+        const passwordKey = await crypto.subtle.importKey(
+            'raw',
+            enc.encode(password),
+            'PBKDF2',
+            false,
+            ['deriveBits']
+        );
+
+        const saltBytes = new Uint8Array(saltHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+
+        const derivedBits = await crypto.subtle.deriveBits(
+            {
+                name: 'PBKDF2',
+                salt: saltBytes,
+                iterations: 100000,
+                hash: 'SHA-256'
+            },
+            passwordKey,
+            512
+        );
+
+        const authKeyRaw = derivedBits.slice(0, 32);
+        const encKeyRaw = derivedBits.slice(32, 64);
+
+        const authHashBuffer = await crypto.subtle.digest('SHA-256', authKeyRaw);
+        const authKeyHash = Array.from(new Uint8Array(authHashBuffer))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+
+        const encKey = await crypto.subtle.importKey(
+            'raw',
+            encKeyRaw,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['encrypt', 'decrypt']
+        );
+
+        return { authKeyHash, encKey };
     }
 
-    function setToken(token) {
-        if (token) {
-            localStorage.setItem('aura_token', token);
-        } else {
-            localStorage.removeItem('aura_token');
+    async function encryptData(plainText, key) {
+        const enc = new TextEncoder();
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const cipherBuffer = await crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv: iv },
+            key,
+            enc.encode(plainText)
+        );
+
+        const cipherBytes = new Uint8Array(cipherBuffer);
+        let binaryStr = '';
+        for (let i = 0; i < cipherBytes.length; i++) {
+            binaryStr += String.fromCharCode(cipherBytes[i]);
+        }
+        const ciphertext = btoa(binaryStr);
+
+        let ivStr = '';
+        for (let i = 0; i < iv.length; i++) {
+            ivStr += String.fromCharCode(iv[i]);
+        }
+        const ivB64 = btoa(ivStr);
+
+        return { ciphertext, iv: ivB64 };
+    }
+
+    async function decryptData(ciphertextB64, ivB64, key) {
+        if (!key) return '•••••••••••••••• (Сейф заблокирован)';
+        try {
+            const cipherBinary = atob(ciphertextB64);
+            const cipherBytes = new Uint8Array(cipherBinary.length);
+            for (let i = 0; i < cipherBinary.length; i++) {
+                cipherBytes[i] = cipherBinary.charCodeAt(i);
+            }
+
+            const ivBinary = atob(ivB64);
+            const ivBytes = new Uint8Array(ivBinary.length);
+            for (let i = 0; i < ivBinary.length; i++) {
+                ivBytes[i] = ivBinary.charCodeAt(i);
+            }
+
+            const decryptedBuffer = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv: ivBytes },
+                key,
+                cipherBytes
+            );
+
+            return new TextDecoder().decode(decryptedBuffer);
+        } catch (e) {
+            return '[Ошибка дешифрования: неверный ключ]';
         }
     }
 
-    async function authFetch(url, options = {}) {
-        const token = getToken();
-        const headers = options.headers || {};
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-        options.headers = headers;
+    function generateRandomSaltHex(bytesLength = 16) {
+        const bytes = crypto.getRandomValues(new Uint8Array(bytesLength));
+        return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
 
+    // === Inactivity Auto-Lock Timer ===
+
+    function resetInactivityTimer() {
+        if (inactivityTimer) clearTimeout(inactivityTimer);
+        if (currentUser && vaultEncryptionKey) {
+            inactivityTimer = setTimeout(() => {
+                lockVault();
+            }, INACTIVITY_TIMEOUT_MS);
+        }
+    }
+
+    function lockVault() {
+        vaultEncryptionKey = null; // Zero-Knowledge: wipe key from RAM
+        vaultLockOverlay.style.display = 'flex';
+        lockPasswordInput.value = '';
+        lockPasswordInput.focus();
+        renderNotes();
+        showToast('Хранилище заблокировано по таймеру неактивности', 'warning');
+    }
+
+    ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+        window.addEventListener(evt, resetInactivityTimer, { passive: true });
+    });
+
+    // === Clipboard Auto-Wipe (60 Seconds) ===
+
+    function copyWithAutoWipe(text, label = 'Данные') {
+        if (!text || text.includes('Сейф заблокирован')) {
+            showToast('Разблокируйте сейф для копирования', 'error');
+            return;
+        }
+
+        navigator.clipboard.writeText(text).then(() => {
+            if (clipboardWipeTimeout) clearTimeout(clipboardWipeTimeout);
+            showToast(`${label} скопированы! Буфер очистится через 60 сек.`, 'success');
+
+            clipboardWipeTimeout = setTimeout(() => {
+                navigator.clipboard.writeText('').then(() => {
+                    showToast('Буфер обмена очищен в целях безопасности', 'success');
+                }).catch(() => {});
+            }, 60000);
+        }).catch(() => {
+            showToast('Не удалось скопировать', 'error');
+        });
+    }
+
+    // === Password Generator ===
+
+    function generateStrongPassword() {
+        const length = parseInt(genLengthSlider.value, 10);
+        let charset = '';
+        if (genUpper.checked) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        if (genLower.checked) charset += 'abcdefghijklmnopqrstuvwxyz';
+        if (genDigits.checked) charset += '0123456789';
+        if (genSymbols.checked) charset += '!@#$%^&*()-_=+[]{}|;:,.<>?';
+
+        if (!charset) {
+            charset = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            genLower.checked = true;
+            genDigits.checked = true;
+        }
+
+        const randomValues = new Uint32Array(length);
+        crypto.getRandomValues(randomValues);
+        let password = '';
+        for (let i = 0; i < length; i++) {
+            password += charset[randomValues[i] % charset.length];
+        }
+        return password;
+    }
+
+    function updateGeneratorUI() {
+        genOutputText.value = generateStrongPassword();
+        genLenVal.textContent = genLengthSlider.value;
+    }
+
+    openGenBtn.addEventListener('click', () => {
+        pwdGenModal.style.display = 'flex';
+        updateGeneratorUI();
+    });
+
+    closeGenModalBtn.addEventListener('click', () => {
+        pwdGenModal.style.display = 'none';
+    });
+
+    refreshGenBtn.addEventListener('click', updateGeneratorUI);
+    genLengthSlider.addEventListener('input', updateGeneratorUI);
+    [genUpper, genLower, genDigits, genSymbols].forEach(cb => cb.addEventListener('change', updateGeneratorUI));
+
+    copyGenPwdBtn.addEventListener('click', () => {
+        copyWithAutoWipe(genOutputText.value, 'Сгенерированный пароль');
+    });
+
+    // === HTTP Client with HttpOnly Cookies (credentials: 'same-origin') ===
+
+    async function apiFetch(url, options = {}) {
+        options.credentials = 'same-origin';
         const res = await fetch(url, options);
-        if (res.status === 401) {
-            setToken(null);
+        if (res.status === 401 && !url.includes('/api/login') && !url.includes('/api/auth/salt')) {
             showAuthView();
             showToast('Сессия завершена. Войдите снова.', 'error');
             throw new Error('Unauthorized');
@@ -112,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             loginForm.classList.remove('active');
             registerForm.classList.add('active');
-            formSubtitle.textContent = 'Создайте новый аккаунт за 1 минуту';
+            formSubtitle.textContent = 'Создайте защищенный Zero-Knowledge аккаунт';
         } else {
             tabLogin.classList.add('active');
             tabRegister.classList.remove('active');
@@ -120,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             registerForm.classList.remove('active');
             loginForm.classList.add('active');
-            formSubtitle.textContent = 'Добро пожаловать в систему';
+            formSubtitle.textContent = 'Zero-Knowledge личное хранилище';
         }
     }
 
@@ -131,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (forgotLink) {
         forgotLink.addEventListener('click', (e) => {
             e.preventDefault();
-            showToast('Восстановление пароля пока недоступно', 'error');
+            showToast('Zero-Knowledge: мастер-пароль известен только вам и не подлежит сбросу', 'warning');
         });
     }
 
@@ -187,42 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const login = document.getElementById('login-identifier').value.trim();
-        const password = document.getElementById('login-password').value;
-
-        if (!login || !password) {
-            showToast('Введите логин и пароль', 'error');
-            return;
-        }
-
-        loginBtn.classList.add('loading');
-
-        try {
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ login, password })
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                showToast(data.detail || 'Неверный логин или пароль', 'error');
-            } else {
-                setToken(data.token);
-                showToast(data.message || 'Вход выполнен успешно!', 'success');
-                showDashboardView(data.user);
-            }
-        } catch (err) {
-            console.error(err);
-            showToast('Не удалось подключиться к серверу', 'error');
-        } finally {
-            loginBtn.classList.remove('loading');
-        }
-    });
+    // === Zero-Knowledge Registration ===
 
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -255,10 +423,18 @@ document.addEventListener('DOMContentLoaded', () => {
         registerBtn.classList.add('loading');
 
         try {
-            const res = await fetch('/api/register', {
+            const auth_salt = generateRandomSaltHex(16);
+            const { authKeyHash, encKey } = await deriveMasterKeys(password, auth_salt);
+
+            const res = await apiFetch('/api/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password })
+                body: JSON.stringify({
+                    username,
+                    email,
+                    auth_key_hash: authKeyHash,
+                    auth_salt: auth_salt
+                })
             });
 
             const data = await res.json();
@@ -266,7 +442,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!res.ok) {
                 showToast(data.detail || 'Ошибка при регистрации', 'error');
             } else {
-                setToken(data.token);
+                currentUser = data.user;
+                vaultEncryptionKey = encKey;
                 showToast(data.message || 'Регистрация успешна!', 'success');
                 showDashboardView(data.user);
             }
@@ -278,12 +455,108 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // === Zero-Knowledge Login ===
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const login = document.getElementById('login-identifier').value.trim();
+        const password = document.getElementById('login-password').value;
+
+        if (!login || !password) {
+            showToast('Введите логин и пароль', 'error');
+            return;
+        }
+
+        loginBtn.classList.add('loading');
+
+        try {
+            // 1. Fetch user's public salt
+            const saltRes = await apiFetch(`/api/auth/salt?login=${encodeURIComponent(login)}`);
+            const saltData = await saltRes.json();
+            const auth_salt = saltData.auth_salt;
+
+            // 2. Derive keys in browser using Web Crypto
+            const { authKeyHash, encKey } = await deriveMasterKeys(password, auth_salt);
+
+            // 3. Post only authKeyHash to server
+            const res = await apiFetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    login,
+                    auth_key_hash: authKeyHash
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showToast(data.detail || 'Неверный логин или пароль', 'error');
+            } else {
+                currentUser = data.user;
+                vaultEncryptionKey = encKey;
+                showToast(data.message || 'Вход выполнен успешно!', 'success');
+                showDashboardView(data.user);
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Ошибка при входе в систему', 'error');
+        } finally {
+            loginBtn.classList.remove('loading');
+        }
+    });
+
+    // === Vault Unlock (from Auto-Lock) ===
+
+    vaultUnlockForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const password = lockPasswordInput.value;
+        if (!password || !currentUser) return;
+
+        try {
+            const { encKey } = await deriveMasterKeys(password, currentUser.auth_salt);
+
+            // Verify key by trying to decrypt first note if available
+            if (allNotes.length > 0) {
+                const test = await decryptData(allNotes[0].content_ciphertext, allNotes[0].iv, encKey);
+                if (test.startsWith('[Ошибка дешифрования')) {
+                    showToast('Неверный мастер-пароль', 'error');
+                    return;
+                }
+            }
+
+            vaultEncryptionKey = encKey;
+            vaultLockOverlay.style.display = 'none';
+            lockPasswordInput.value = '';
+            resetInactivityTimer();
+            renderNotes();
+            showToast('Сейф успешно разблокирован', 'success');
+        } catch (err) {
+            showToast('Неверный мастер-пароль', 'error');
+        }
+    });
+
+    lockLogoutBtn.addEventListener('click', () => {
+        performLogout();
+    });
+
+    lockVaultBtn.addEventListener('click', () => {
+        lockVault();
+    });
+
+    // === View Switchers ===
+
     function showAuthView() {
         dashboardView.style.display = 'none';
+        vaultLockOverlay.style.display = 'none';
         authView.style.display = 'block';
         pageContainer.classList.remove('dashboard-mode');
         loginForm.reset();
         registerForm.reset();
+        currentUser = null;
+        vaultEncryptionKey = null;
+        if (inactivityTimer) clearTimeout(inactivityTimer);
         switchTab('login');
     }
 
@@ -291,6 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
         authView.style.display = 'none';
         dashboardView.style.display = 'flex';
         pageContainer.classList.add('dashboard-mode');
+        vaultLockOverlay.style.display = 'none';
 
         const initial = (user.username || 'U')[0].toUpperCase();
         document.getElementById('user-chip-avatar').textContent = initial;
@@ -299,29 +573,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('prof-username').textContent = user.username || '—';
         document.getElementById('prof-email').textContent = user.email || '—';
-        document.getElementById('prof-id').textContent = user.id ? `#${user.id}` : '#—';
-        if (user.created_at) {
-            document.getElementById('prof-date').textContent = new Date(user.created_at).toLocaleDateString('ru-RU', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
+
+        // Format UUIDv4 with click-to-copy
+        const profIdEl = document.getElementById('prof-id');
+        if (user.id) {
+            profIdEl.textContent = `${user.id.substring(0, 8)}...${user.id.substring(user.id.length - 4)}`;
+            profIdEl.onclick = () => copyWithAutoWipe(user.id, 'UUID пользователя');
+        } else {
+            profIdEl.textContent = '#—';
         }
 
+        // Format created_at date
+        if (user.created_at) {
+            try {
+                const dateObj = new Date(user.created_at.replace(' ', 'T') + 'Z');
+                document.getElementById('prof-date').textContent = isNaN(dateObj.getTime())
+                    ? user.created_at
+                    : dateObj.toLocaleDateString('ru-RU', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+            } catch (e) {
+                document.getElementById('prof-date').textContent = user.created_at;
+            }
+        }
+
+        resetInactivityTimer();
         loadNotes();
     }
 
-    dashLogoutBtn.addEventListener('click', async () => {
+    async function performLogout() {
         try {
-            await authFetch('/api/logout', { method: 'POST' });
+            await apiFetch('/api/logout', { method: 'POST' });
         } catch (err) {
-            // Ignored if already unauthorized
+            // Ignored
         } finally {
-            setToken(null);
             showAuthView();
             showToast('Вы вышли из учетной записи', 'success');
         }
-    });
+    }
+
+    dashLogoutBtn.addEventListener('click', performLogout);
+
+    // === Notes / Secret Management ===
 
     toggleNewNoteBtn.addEventListener('click', () => {
         const isHidden = noteForm.style.display === 'none';
@@ -339,6 +636,11 @@ document.addEventListener('DOMContentLoaded', () => {
     noteForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        if (!vaultEncryptionKey) {
+            showToast('Сейф заблокирован. Разблокируйте его для создания записи', 'error');
+            return;
+        }
+
         const title = document.getElementById('note-title').value.trim();
         const category = document.getElementById('note-category').value;
         const content = document.getElementById('note-content').value.trim();
@@ -349,18 +651,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const res = await authFetch('/api/notes', {
+            // Encrypt content via AES-256-GCM in browser
+            const { ciphertext, iv } = await encryptData(content, vaultEncryptionKey);
+
+            const res = await apiFetch('/api/notes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, category, content })
+                body: JSON.stringify({
+                    title,
+                    category,
+                    content_ciphertext: ciphertext,
+                    iv: iv
+                })
             });
 
             const newNote = await res.json();
+            newNote.decryptedContent = content; // Store decrypted version in RAM
             allNotes.unshift(newNote);
             renderNotes();
             noteForm.reset();
             noteForm.style.display = 'none';
-            showToast('Запись надежно сохранена в сейф!', 'success');
+            showToast('Запись надежно зашифрована AES-GCM и сохранена в сейф!', 'success');
         } catch (err) {
             console.error(err);
             showToast('Ошибка при сохранении записи', 'error');
@@ -369,8 +680,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadNotes() {
         try {
-            const res = await authFetch('/api/notes');
+            const res = await apiFetch('/api/notes');
             allNotes = await res.json();
+
+            // Decrypt all notes in memory
+            for (const note of allNotes) {
+                note.decryptedContent = await decryptData(note.content_ciphertext, note.iv, vaultEncryptionKey);
+            }
+
             renderNotes();
         } catch (err) {
             console.error(err);
@@ -383,7 +700,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let filtered = allNotes.filter(item => {
             const matchesCat = currentFilter === 'all' || item.category === currentFilter;
             const q = searchQuery.toLowerCase();
-            const matchesSearch = !q || item.title.toLowerCase().includes(q) || item.content.toLowerCase().includes(q);
+            const textToSearch = item.decryptedContent || '';
+            const matchesSearch = !q || item.title.toLowerCase().includes(q) || textToSearch.toLowerCase().includes(q);
             return matchesCat && matchesSearch;
         });
 
@@ -397,7 +715,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </svg>
                     </div>
                     <p>Записи не найдены</p>
-                    <span class="empty-sub">${allNotes.length === 0 ? 'Нажмите «Новая запись», чтобы создать первый секрет' : 'Попробуйте изменить категорию или поисковый запрос'}</span>
+                    <span class="empty-sub">${allNotes.length === 0 ? 'Нажмите «Новая запись», чтобы создать первый зашифрованный секрет' : 'Попробуйте изменить категорию или поисковый запрос'}</span>
                 </div>
             `;
             return;
@@ -413,12 +731,23 @@ document.addEventListener('DOMContentLoaded', () => {
         notesContainer.innerHTML = filtered.map(item => {
             const isSensitive = item.category === 'password' || item.category === 'api' || item.category === 'secret';
             const catLabel = categoryLabels[item.category] || item.category;
-            const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString('ru-RU', {
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit'
-            }) : '';
+
+            let dateStr = '';
+            if (item.created_at) {
+                try {
+                    const d = new Date(item.created_at.replace(' ', 'T') + 'Z');
+                    dateStr = isNaN(d.getTime()) ? item.created_at : d.toLocaleDateString('ru-RU', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                } catch (e) {
+                    dateStr = item.created_at;
+                }
+            }
+
+            const plain = item.decryptedContent || '••••••••••••••••';
 
             return `
                 <div class="note-card" data-id="${item.id}">
@@ -436,7 +765,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </svg>
                                 </button>
                             ` : ''}
-                            <button type="button" class="icon-btn copy-note-btn" title="Скопировать содержимое">
+                            <button type="button" class="icon-btn copy-note-btn" title="Скопировать с автоочисткой через 1 мин">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -450,9 +779,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             </button>
                         </div>
                     </div>
-                    <div class="note-card-content ${isSensitive ? 'masked' : ''}" data-raw="${encodeURIComponent(item.content)}">${isSensitive ? '••••••••••••••••' : escapeHtml(item.content)}</div>
+                    <div class="note-card-content ${isSensitive ? 'masked' : ''}" data-raw="${encodeURIComponent(plain)}">${isSensitive ? '••••••••••••••••' : escapeHtml(plain)}</div>
                     <div class="note-card-footer">
-                        <span>Защищено</span>
+                        <span>AES-256-GCM Encrypted</span>
                         <span>${dateStr}</span>
                     </div>
                 </div>
@@ -481,11 +810,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const copyBtn = card.querySelector('.copy-note-btn');
             if (copyBtn) {
                 copyBtn.addEventListener('click', () => {
-                    navigator.clipboard.writeText(rawContent).then(() => {
-                        showToast('Скопировано в буфер обмена', 'success');
-                    }).catch(() => {
-                        showToast('Не удалось скопировать', 'error');
-                    });
+                    copyWithAutoWipe(rawContent, 'Секретные данные');
                 });
             }
 
@@ -494,8 +819,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 delBtn.addEventListener('click', async () => {
                     if (!confirm('Вы уверены, что хотите удалить эту запись?')) return;
                     try {
-                        await authFetch(`/api/notes/${id}`, { method: 'DELETE' });
-                        allNotes = allNotes.filter(n => n.id !== parseInt(id, 10));
+                        await apiFetch(`/api/notes/${id}`, { method: 'DELETE' });
+                        allNotes = allNotes.filter(n => n.id !== id);
                         renderNotes();
                         showToast('Запись удалена', 'success');
                     } catch (err) {
@@ -521,6 +846,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderNotes();
     });
 
+    // === Change Master Password ===
+
     changePwdForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -533,41 +860,76 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (newPassword.length < 6) {
-            showToast('Новый пароль должен быть не короче 6 символов', 'error');
+            showToast('Новый мастер-пароль должен содержать от 6 символов', 'error');
             return;
         }
 
         try {
-            const res = await authFetch('/api/change-password', {
+            // Derive current auth hash
+            const { authKeyHash: currentHash } = await deriveMasterKeys(currentPassword, currentUser.auth_salt);
+
+            // Generate new salt and derive new keys
+            const new_salt = generateRandomSaltHex(16);
+            const { authKeyHash: newHash, encKey: newEncKey } = await deriveMasterKeys(newPassword, new_salt);
+
+            // Re-encrypt existing notes in memory with newEncKey
+            const reencrypted_notes = [];
+            for (const note of allNotes) {
+                if (note.decryptedContent && !note.decryptedContent.startsWith('[Ошибка') && !note.decryptedContent.includes('Сейф заблокирован')) {
+                    const { ciphertext, iv } = await encryptData(note.decryptedContent, newEncKey);
+                    reencrypted_notes.push({
+                        id: note.id,
+                        content_ciphertext: ciphertext,
+                        iv: iv
+                    });
+                }
+            }
+
+            const res = await apiFetch('/api/change-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
+                body: JSON.stringify({
+                    current_auth_key_hash: currentHash,
+                    new_auth_key_hash: newHash,
+                    new_auth_salt: new_salt,
+                    reencrypted_notes: reencrypted_notes
+                })
             });
 
             const data = await res.json();
             if (!res.ok) {
                 showToast(data.detail || 'Ошибка при обновлении пароля', 'error');
             } else {
-                showToast('Пароль успешно обновлен!', 'success');
+                currentUser.auth_salt = new_salt;
+                vaultEncryptionKey = newEncKey;
+                for (const rn of reencrypted_notes) {
+                    const localNote = allNotes.find(n => n.id === rn.id);
+                    if (localNote) {
+                        localNote.content_ciphertext = rn.content_ciphertext;
+                        localNote.iv = rn.iv;
+                    }
+                }
+                showToast('Мастер-пароль успешно обновлен!', 'success');
                 changePwdForm.reset();
             }
         } catch (err) {
             console.error(err);
-            showToast('Ошибка при обновлении пароля', 'error');
+            showToast('Ошибка при обновлении мастер-пароля', 'error');
         }
     });
 
-    async function checkAuth() {
-        const token = getToken();
-        if (!token) {
-            showAuthView();
-            return;
-        }
+    // === Check Existing Session via HttpOnly Cookie ===
 
+    async function checkAuth() {
         try {
-            const res = await authFetch('/api/me');
+            const res = await apiFetch('/api/me');
             const data = await res.json();
+            currentUser = data.user;
+
+            // Session cookie exists, but in Zero-Knowledge the encryption key is in RAM.
+            // Prompt user with unlock overlay to restore encryption key:
             showDashboardView(data.user);
+            lockVault();
         } catch (err) {
             showAuthView();
         }

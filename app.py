@@ -1,13 +1,17 @@
-import os
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 import hashlib
-import secrets
+import os
+from pathlib import Path
 import sqlite3
+import time
 from typing import Any, List, Optional
+import uuid
 
-from fastapi import Depends, FastAPI, Header, HTTPException, status
+from argon2 import PasswordHasher, Type
+from argon2.exceptions import VerifyMismatchError
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -19,6 +23,35 @@ STATIC_DIR = BASE_DIR / "static"
 
 TURSO_DATABASE_URL = os.getenv("TURSO_DATABASE_URL")
 TURSO_AUTH_TOKEN = os.getenv("TURSO_AUTH_TOKEN")
+
+ph = PasswordHasher(
+    time_cost=2,
+    memory_cost=65536,
+    parallelism=1,
+    hash_len=32,
+    type=Type.ID,
+)
+
+_rate_limit_records = defaultdict(list)
+
+def check_rate_limit(endpoint: str, client_ip: str, max_requests: int = 5, window_seconds: int = 60):
+    now = time.time()
+    key = f"{endpoint}:{client_ip}"
+    _rate_limit_records[key] = [t for t in _rate_limit_records[key] if now - t < window_seconds]
+    if len(_rate_limit_records[key]) >= max_requests:
+        retry_after = int(window_seconds - (now - _rate_limit_records[key][0])) + 1
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Слишком много попыток. Пожалуйста, подождите {retry_after} сек.",
+            headers={"Retry-After": str(retry_after)},
+        )
+    _rate_limit_records[key].append(now)
+
+def get_client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "127.0.0.1"
 
 class DBResult:
     def __init__(self, rows: list, lastrowid: Optional[int] = None, rowcount: int = 0):
@@ -65,18 +98,18 @@ db = Database()
 def init_db():
     db.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
-            salt TEXT NOT NULL,
+            auth_salt TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
     db.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
             token TEXT PRIMARY KEY,
-            user_id INTEGER NOT NULL,
+            user_id TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             expires_at TIMESTAMP NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -84,33 +117,19 @@ def init_db():
     """)
     db.execute("""
         CREATE TABLE IF NOT EXISTS notes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
             title TEXT NOT NULL,
             category TEXT NOT NULL DEFAULT 'note',
-            content TEXT NOT NULL,
+            content_ciphertext TEXT NOT NULL,
+            iv TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
         )
     """)
 
-def hash_password(password: str, salt: Optional[str] = None) -> tuple[str, str]:
-    if not salt:
-        salt = secrets.token_hex(16)
-    pwd_hash = hashlib.pbkdf2_hmac(
-        "sha256",
-        password.encode("utf-8"),
-        salt.encode("utf-8"),
-        100_000,
-    ).hex()
-    return pwd_hash, salt
-
-def verify_password(password: str, pwd_hash: str, salt: str) -> bool:
-    new_hash, _ = hash_password(password, salt)
-    return secrets.compare_digest(new_hash, pwd_hash)
-
-def create_session(user_id: int) -> str:
-    token = secrets.token_urlsafe(32)
+def create_session(user_id: str) -> str:
+    token = str(uuid.uuid4())
     expires_at = (datetime.now(timezone.utc) + timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
     db.execute(
         "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)",
@@ -118,16 +137,22 @@ def create_session(user_id: int) -> str:
     )
     return token
 
-def get_current_user(authorization: Optional[str] = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
+def get_current_user(request: Request):
+    token = request.cookies.get("aura_session")
+    if not token:
+        auth_header = request.headers.get("authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ", 1)[1].strip()
+
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Требуется авторизация.",
         )
-    token = authorization.split(" ", 1)[1].strip()
+
     res = db.execute(
         """
-        SELECT u.id, u.username, u.email, u.created_at, s.token
+        SELECT u.id, u.username, u.email, u.created_at, u.auth_salt, s.token
         FROM sessions s
         JOIN users u ON u.id = s.user_id
         WHERE s.token = ? AND s.expires_at > CURRENT_TIMESTAMP
@@ -145,20 +170,29 @@ def get_current_user(authorization: Optional[str] = Header(None)):
 class RegisterRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=30)
     email: EmailStr
-    password: str = Field(..., min_length=6, max_length=100)
+    auth_key_hash: str = Field(..., min_length=32, max_length=128)
+    auth_salt: str = Field(..., min_length=16, max_length=64)
 
 class LoginRequest(BaseModel):
     login: str
-    password: str
+    auth_key_hash: str = Field(..., min_length=32, max_length=128)
+
+class ReencryptedNote(BaseModel):
+    id: str
+    content_ciphertext: str
+    iv: str
 
 class ChangePasswordRequest(BaseModel):
-    current_password: str
-    new_password: str = Field(..., min_length=6, max_length=100)
+    current_auth_key_hash: str = Field(..., min_length=32, max_length=128)
+    new_auth_key_hash: str = Field(..., min_length=32, max_length=128)
+    new_auth_salt: str = Field(..., min_length=16, max_length=64)
+    reencrypted_notes: Optional[List[ReencryptedNote]] = None
 
 class NoteCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=120)
     category: str = Field("note", max_length=30)
-    content: str = Field(..., min_length=1, max_length=5000)
+    content_ciphertext: str = Field(..., min_length=1, max_length=50000)
+    iv: str = Field(..., min_length=10, max_length=64)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -185,8 +219,8 @@ async def validation_exception_handler(request, exc: RequestValidationError):
             messages.append("Введите корректный email адрес (например, alex@domain.com)")
         elif field == "username":
             messages.append("Имя пользователя должно содержать от 3 до 30 символов")
-        elif field == "password":
-            messages.append("Пароль должен содержать от 6 до 100 символов")
+        elif field in ("auth_key_hash", "password"):
+            messages.append("Ошибка генерации ключа авторизации")
         else:
             messages.append(err.get("msg", "Некорректно заполнены данные"))
     return JSONResponse(
@@ -194,8 +228,29 @@ async def validation_exception_handler(request, exc: RequestValidationError):
         content={"detail": ". ".join(messages)},
     )
 
+@app.get("/api/auth/salt")
+def get_auth_salt(login: str, request: Request):
+    ip = get_client_ip(request)
+    check_rate_limit("salt", ip, max_requests=20, window_seconds=60)
+
+    clean_login = login.strip()
+    res = db.execute(
+        "SELECT auth_salt FROM users WHERE username = ? OR email = ?",
+        (clean_login, clean_login),
+    )
+    user = res.fetchone()
+    if user:
+        return {"auth_salt": user["auth_salt"]}
+
+    # Return deterministic pseudo-salt for unknown users to prevent enumeration
+    fake_salt = hashlib.sha256(f"aura_salt_v1_{clean_login}".encode("utf-8")).hexdigest()[:32]
+    return {"auth_salt": fake_salt}
+
 @app.post("/api/register", status_code=status.HTTP_201_CREATED)
-def register(data: RegisterRequest):
+def register(data: RegisterRequest, response: Response, request: Request):
+    ip = get_client_ip(request)
+    check_rate_limit("register", ip, max_requests=5, window_seconds=60)
+
     res = db.execute(
         "SELECT 1 FROM users WHERE username = ? OR email = ?",
         (data.username, data.email),
@@ -206,48 +261,77 @@ def register(data: RegisterRequest):
             detail="Пользователь с таким именем или email уже зарегистрирован.",
         )
 
-    pwd_hash, salt = hash_password(data.password)
-    insert_res = db.execute(
-        "INSERT INTO users (username, email, password_hash, salt) VALUES (?, ?, ?, ?)",
-        (data.username, data.email, pwd_hash, salt),
-    )
-    user_id = insert_res.lastrowid
+    argon_hash = ph.hash(data.auth_key_hash)
+    user_id = str(uuid.uuid4())
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
-    token = create_session(user_id)
+    db.execute(
+        "INSERT INTO users (id, username, email, password_hash, auth_salt, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (user_id, data.username, data.email, argon_hash, data.auth_salt, now_str),
+    )
+
+    session_token = create_session(user_id)
+    response.set_cookie(
+        key="aura_session",
+        value=session_token,
+        httponly=True,
+        samesite="lax",
+        secure=not DEBUG,
+        max_age=7 * 24 * 3600,
+        path="/",
+    )
+
     return {
         "success": True,
         "message": "Регистрация прошла успешно!",
-        "token": token,
         "user": {
             "id": user_id,
             "username": data.username,
             "email": data.email,
+            "auth_salt": data.auth_salt,
+            "created_at": now_str,
         },
     }
 
 @app.post("/api/login")
-def login(data: LoginRequest):
+def login(data: LoginRequest, response: Response, request: Request):
+    ip = get_client_ip(request)
+    check_rate_limit("login", ip, max_requests=5, window_seconds=60)
+
     res = db.execute(
-        "SELECT id, username, email, password_hash, salt, created_at FROM users WHERE username = ? OR email = ?",
+        "SELECT id, username, email, password_hash, auth_salt, created_at FROM users WHERE username = ? OR email = ?",
         (data.login, data.login),
     )
     user = res.fetchone()
 
-    if not user or not verify_password(data.password, user["password_hash"], user["salt"]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверное имя пользователя/email или пароль.",
-        )
+    invalid_msg = "Неверное имя пользователя/email или пароль."
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=invalid_msg)
 
-    token = create_session(user["id"])
+    try:
+        ph.verify(user["password_hash"], data.auth_key_hash)
+    except VerifyMismatchError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=invalid_msg)
+
+    session_token = create_session(user["id"])
+    response.set_cookie(
+        key="aura_session",
+        value=session_token,
+        httponly=True,
+        samesite="lax",
+        secure=not DEBUG,
+        max_age=7 * 24 * 3600,
+        path="/",
+    )
+
     return {
         "success": True,
         "message": f"Добро пожаловать, {user['username']}!",
-        "token": token,
         "user": {
             "id": user["id"],
             "username": user["username"],
             "email": user["email"],
+            "auth_salt": user["auth_salt"],
             "created_at": user["created_at"],
         },
     }
@@ -257,48 +341,65 @@ def get_me(current_user = Depends(get_current_user)):
     res = db.execute("SELECT COUNT(*) AS total_notes FROM notes WHERE user_id = ?", (current_user["id"],))
     stats = res.fetchone()
 
-    db_status = "Turso Cloud DB" if db.use_turso else "SQLite Local"
+    db_status = "Turso Zero-Knowledge" if db.use_turso else "SQLite Zero-Knowledge"
 
     return {
         "user": {
             "id": current_user["id"],
             "username": current_user["username"],
             "email": current_user["email"],
+            "auth_salt": current_user["auth_salt"],
             "created_at": current_user["created_at"],
         },
         "stats": {
             "notes_count": stats["total_notes"] if stats else 0,
-            "security_status": f"Защищено ({db_status})",
+            "security_status": f"Защищено (Argon2id + AES-GCM + {db_status})",
         },
     }
 
 @app.post("/api/logout")
-def logout(current_user = Depends(get_current_user)):
-    db.execute("DELETE FROM sessions WHERE token = ?", (current_user["token"],))
+def logout(response: Response, request: Request, current_user = Depends(get_current_user)):
+    token = request.cookies.get("aura_session") or current_user["token"]
+    if token:
+        db.execute("DELETE FROM sessions WHERE token = ?", (token,))
+    response.delete_cookie(key="aura_session", path="/")
     return {"success": True, "message": "Вы вышли из системы."}
 
 @app.post("/api/change-password")
-def change_password(data: ChangePasswordRequest, current_user = Depends(get_current_user)):
-    res = db.execute("SELECT password_hash, salt FROM users WHERE id = ?", (current_user["id"],))
+def change_password(data: ChangePasswordRequest, request: Request, current_user = Depends(get_current_user)):
+    ip = get_client_ip(request)
+    check_rate_limit("change-password", ip, max_requests=5, window_seconds=60)
+
+    res = db.execute("SELECT password_hash FROM users WHERE id = ?", (current_user["id"],))
     user_row = res.fetchone()
-    if not user_row or not verify_password(data.current_password, user_row["password_hash"], user_row["salt"]):
+
+    try:
+        ph.verify(user_row["password_hash"], data.current_auth_key_hash)
+    except VerifyMismatchError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Неверный текущий пароль.",
+            detail="Неверный текущий мастер-пароль.",
         )
 
-    new_hash, new_salt = hash_password(data.new_password)
+    new_argon_hash = ph.hash(data.new_auth_key_hash)
     db.execute(
-        "UPDATE users SET password_hash = ?, salt = ? WHERE id = ?",
-        (new_hash, new_salt, current_user["id"]),
+        "UPDATE users SET password_hash = ?, auth_salt = ? WHERE id = ?",
+        (new_argon_hash, data.new_auth_salt, current_user["id"]),
     )
 
-    return {"success": True, "message": "Пароль успешно обновлен!"}
+    if data.reencrypted_notes:
+        for note in data.reencrypted_notes:
+            db.execute(
+                "UPDATE notes SET content_ciphertext = ?, iv = ? WHERE id = ? AND user_id = ?",
+                (note.content_ciphertext, note.iv, note.id, current_user["id"]),
+            )
+
+    return {"success": True, "message": "Мастер-пароль успешно обновлен!"}
 
 @app.get("/api/notes")
 def list_notes(current_user = Depends(get_current_user)):
     res = db.execute(
-        "SELECT id, title, category, content, created_at FROM notes WHERE user_id = ? ORDER BY id DESC",
+        "SELECT id, title, category, content_ciphertext, iv, created_at FROM notes WHERE user_id = ? ORDER BY created_at DESC",
         (current_user["id"],),
     )
     rows = res.fetchall()
@@ -308,7 +409,8 @@ def list_notes(current_user = Depends(get_current_user)):
             "id": r["id"],
             "title": r["title"],
             "category": r["category"],
-            "content": r["content"],
+            "content_ciphertext": r["content_ciphertext"],
+            "iv": r["iv"],
             "created_at": r["created_at"],
         }
         for r in rows
@@ -316,24 +418,25 @@ def list_notes(current_user = Depends(get_current_user)):
 
 @app.post("/api/notes", status_code=status.HTTP_201_CREATED)
 def create_note(data: NoteCreate, current_user = Depends(get_current_user)):
-    insert_res = db.execute(
-        "INSERT INTO notes (user_id, title, category, content) VALUES (?, ?, ?, ?)",
-        (current_user["id"], data.title, data.category, data.content),
+    note_id = str(uuid.uuid4())
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+    db.execute(
+        "INSERT INTO notes (id, user_id, title, category, content_ciphertext, iv, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (note_id, current_user["id"], data.title, data.category, data.content_ciphertext, data.iv, now_str),
     )
-    note_id = insert_res.lastrowid
-    res = db.execute("SELECT id, title, category, content, created_at FROM notes WHERE id = ?", (note_id,))
-    new_note = res.fetchone()
 
     return {
-        "id": new_note["id"],
-        "title": new_note["title"],
-        "category": new_note["category"],
-        "content": new_note["content"],
-        "created_at": new_note["created_at"],
+        "id": note_id,
+        "title": data.title,
+        "category": data.category,
+        "content_ciphertext": data.content_ciphertext,
+        "iv": data.iv,
+        "created_at": now_str,
     }
 
 @app.delete("/api/notes/{note_id}")
-def delete_note(note_id: int, current_user = Depends(get_current_user)):
+def delete_note(note_id: str, current_user = Depends(get_current_user)):
     res = db.execute("DELETE FROM notes WHERE id = ? AND user_id = ?", (note_id, current_user["id"]))
     if res.rowcount == 0:
         raise HTTPException(status_code=404, detail="Запись не найдена.")
