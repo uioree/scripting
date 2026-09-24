@@ -134,7 +134,15 @@ async def lifespan(app: FastAPI):
     init_db()
     yield
 
-app = FastAPI(title="Aura Auth", lifespan=lifespan)
+DEBUG = os.getenv("DEBUG", "0").lower() in ("1", "true", "yes")
+
+app = FastAPI(
+    title="Aura Auth",
+    lifespan=lifespan,
+    docs_url="/docs" if DEBUG else None,
+    redoc_url=None,
+    openapi_url="/openapi.json" if DEBUG else None,
+)
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc: RequestValidationError):
