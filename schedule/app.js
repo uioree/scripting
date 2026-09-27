@@ -2,6 +2,7 @@
  * Aura Schedule & Homework Tracker
  * Group: МБИ(б)-31 | ТОГУ
  * Student: Денис Федосеенко
+ * Features: Multi-week browsing (Numerator/Denominator) & Date-specific Homework
  */
 
 // ==========================================
@@ -329,14 +330,64 @@ const DAYS_META = [
   { key: 'sun', short: 'Вс', full: 'Воскресенье', order: 0 }
 ];
 
-// Initial default homework so the app is instantly rich with data
+const MONTH_NAMES_GEN = [
+  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+];
+
+const MONTH_NAMES_SHORT = [
+  'янв', 'фев', 'мар', 'апр', 'мая', 'июн',
+  'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'
+];
+
+// Anchor date: Monday 21.09.2026 is week "denominator" (Знаменатель)
+const ANCHOR_MONDAY = new Date(2026, 8, 21); // Month 8 is September
+
+// Helper: format YYYY-MM-DD
+function toDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function parseDateStr(str) {
+  if (!str) return new Date();
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+// Helper: Get Monday of a given date
+function getMondayOfDate(d) {
+  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const day = date.getDay(); // 0 is Sunday, 1 is Monday...
+  const diff = (day === 0 ? -6 : 1 - day);
+  date.setDate(date.getDate() + diff);
+  return date;
+}
+
+// Calculate week type (Знаменатель or Числитель) based on anchor
+function getWeekTypeForMonday(mondayDate) {
+  const oneDay = 24 * 60 * 60 * 1000;
+  const m1 = new Date(ANCHOR_MONDAY.getFullYear(), ANCHOR_MONDAY.getMonth(), ANCHOR_MONDAY.getDate(), 12);
+  const m2 = new Date(mondayDate.getFullYear(), mondayDate.getMonth(), mondayDate.getDate(), 12);
+  const diffDays = Math.round((m2 - m1) / oneDay);
+  const diffWeeks = Math.round(diffDays / 7);
+
+  // Even week difference => same as anchor (denominator)
+  // Odd week difference => opposite (numerator)
+  return (Math.abs(diffWeeks % 2) === 0) ? 'denominator' : 'numerator';
+}
+
+// Initial seed homework
 const DEFAULT_HOMEWORK = [
   {
     id: 'hw-seed-1',
     subject: 'Стратегический менеджмент',
-    day: 'fri',
+    date: '2026-09-25',
+    dayKey: 'fri',
     text: 'Подготовить SWOT-анализ выбранной компании (до 5 слайдов)',
-    dueDate: getRelativeDate(3),
+    dueDate: '2026-09-25',
     isCompleted: false,
     isUrgent: true,
     link: '',
@@ -345,9 +396,10 @@ const DEFAULT_HOMEWORK = [
   {
     id: 'hw-seed-2',
     subject: 'Подготовка к международному экзамену IELTS/TOEFL',
-    day: 'wed',
+    date: '2026-09-30',
+    dayKey: 'wed',
     text: 'Выучить vocabulary Unit 4, написать Writing Task 1 (описание графика)',
-    dueDate: getRelativeDate(5),
+    dueDate: '2026-09-30',
     isCompleted: false,
     isUrgent: false,
     link: 'https://portal.togudv.ru',
@@ -356,9 +408,10 @@ const DEFAULT_HOMEWORK = [
   {
     id: 'hw-seed-3',
     subject: 'Анализ хозяйственной деятельности предприятия',
-    day: 'tue',
+    date: '2026-09-22',
+    dayKey: 'tue',
     text: 'Рассчитать показатели рентабельности по методичке (таблица 2.4)',
-    dueDate: getRelativeDate(1),
+    dueDate: '2026-09-22',
     isCompleted: true,
     isUrgent: false,
     link: '',
@@ -366,19 +419,20 @@ const DEFAULT_HOMEWORK = [
   }
 ];
 
-function getRelativeDate(offsetDays) {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().split('T')[0];
-}
-
 // ==========================================
 // 2. STATE MANAGEMENT
 // ==========================================
 class AppState {
   constructor() {
-    this.selectedDay = this.getTodayDayKey();
-    this.weekMode = localStorage.getItem('aura_schedule_week_mode') || 'auto'; // 'auto' | 'numerator' | 'denominator' | 'all'
+    const today = new Date();
+    this.todayStr = toDateStr(today);
+    this.currentMonday = getMondayOfDate(today);
+
+    // Selected day date
+    this.selectedDateStr = this.todayStr;
+
+    // Filter modes
+    this.displayMode = localStorage.getItem('aura_schedule_mode') || 'calendar'; // 'calendar' | 'all'
     this.subgroupFilter = localStorage.getItem('aura_schedule_subgroup') || 'all'; // 'all' | '1' | '2'
     this.theme = localStorage.getItem('aura_schedule_theme') || 'dark';
     this.currentView = 'view-schedule';
@@ -390,10 +444,19 @@ class AppState {
     try {
       const stored = localStorage.getItem('aura_schedule_homework');
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          // Migration: ensure every homework has `date`
+          return parsed.map(hw => {
+            if (!hw.date) {
+              hw.date = hw.dueDate || this.todayStr;
+            }
+            return hw;
+          });
+        }
       }
     } catch (e) {
-      console.error('Failed to load homework from localStorage:', e);
+      console.error('Failed to load homework:', e);
     }
     return DEFAULT_HOMEWORK;
   }
@@ -406,31 +469,52 @@ class AppState {
     }
   }
 
-  getTodayDayKey() {
-    const jsDay = new Date().getDay(); // 0 is Sun, 1 is Mon, etc.
+  // Get week type of currently viewed week
+  getCurrentWeekType() {
+    return getWeekTypeForMonday(this.currentMonday);
+  }
+
+  // Get day key ('mon'..'sun') for selectedDateStr
+  getSelectedDayKey() {
+    const d = parseDateStr(this.selectedDateStr);
     const map = { 0: 'sun', 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri', 6: 'sat' };
-    return map[jsDay] || 'tue';
+    return map[d.getDay()] || 'mon';
   }
 
-  // Determine current semester week (Numerator vs Denominator)
-  getCalculatedCurrentWeek() {
-    const now = new Date();
-    // Academic semester start: roughly September 1st of current academic year
-    const startYear = (now.getMonth() >= 7) ? now.getFullYear() : (now.getFullYear() - 1);
-    const semesterStart = new Date(startYear, 8, 1); // 1 Sept
-    // Find first Monday of semester
-    const firstMonday = new Date(semesterStart);
-    const diffDays = Math.floor((now - firstMonday) / (1000 * 60 * 60 * 24));
-    const weekNumber = Math.max(1, Math.floor(diffDays / 7) + 1);
-    // Odd week = Numerator (Ч), Even week = Denominator (З)
-    return (weekNumber % 2 !== 0) ? 'numerator' : 'denominator';
+  // Check if viewing current week
+  isViewingCurrentWeek() {
+    const todayMonday = getMondayOfDate(new Date());
+    return toDateStr(this.currentMonday) === toDateStr(todayMonday);
   }
 
-  getActiveWeekType() {
-    if (this.weekMode === 'auto') {
-      return this.getCalculatedCurrentWeek();
-    }
-    return this.weekMode;
+  // Navigate weeks
+  goToPrevWeek() {
+    const prevM = new Date(this.currentMonday);
+    prevM.setDate(prevM.getDate() - 7);
+    this.currentMonday = prevM;
+
+    // Shift selected date by -7 days
+    const selD = parseDateStr(this.selectedDateStr);
+    selD.setDate(selD.getDate() - 7);
+    this.selectedDateStr = toDateStr(selD);
+  }
+
+  goToNextWeek() {
+    const nextM = new Date(this.currentMonday);
+    nextM.setDate(nextM.getDate() + 7);
+    this.currentMonday = nextM;
+
+    // Shift selected date by +7 days
+    const selD = parseDateStr(this.selectedDateStr);
+    selD.setDate(selD.getDate() + 7);
+    this.selectedDateStr = toDateStr(selD);
+  }
+
+  jumpToToday() {
+    const today = new Date();
+    this.todayStr = toDateStr(today);
+    this.currentMonday = getMondayOfDate(today);
+    this.selectedDateStr = this.todayStr;
   }
 }
 
@@ -443,11 +527,13 @@ const state = new AppState();
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initNavigation();
+  initWeekNavigator();
   initFilters();
-  initDayTabs();
   initHomeworkModal();
   initSearch();
   initSettings();
+  initTouchGestures();
+
   renderApp();
 
   // Periodic ticker for current pair and clock
@@ -501,41 +587,35 @@ function initNavigation() {
   });
 }
 
-// --- Filters (Week & Subgroup) ---
-function initFilters() {
-  const weekSelector = document.getElementById('week-selector');
-  const autoWeekName = document.getElementById('auto-week-name');
-  
-  // Update text inside auto badge
-  const autoType = state.getCalculatedCurrentWeek();
-  autoWeekName.textContent = autoType === 'numerator' ? 'Ч' : 'З';
+// --- Week Navigator (Prev / Next / Today) ---
+function initWeekNavigator() {
+  const prevBtn = document.getElementById('prev-week-btn');
+  const nextBtn = document.getElementById('next-week-btn');
+  const todayBtn = document.getElementById('today-jump-btn');
 
-  // Set active week button
-  weekSelector.querySelectorAll('.pill-btn').forEach(btn => {
-    if (btn.dataset.week === state.weekMode) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
-
-    btn.addEventListener('click', () => {
-      weekSelector.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.weekMode = btn.dataset.week;
-      localStorage.setItem('aura_schedule_week_mode', state.weekMode);
-      renderScheduleCards();
-      updateLiveTicker();
-    });
+  prevBtn.addEventListener('click', () => {
+    state.goToPrevWeek();
+    renderApp();
   });
 
+  nextBtn.addEventListener('click', () => {
+    state.goToNextWeek();
+    renderApp();
+  });
+
+  todayBtn.addEventListener('click', () => {
+    state.jumpToToday();
+    renderApp();
+    showToast('Перешли к текущему дню');
+  });
+}
+
+// --- Filters (Subgroup & Display Mode) ---
+function initFilters() {
   // Subgroup selector
   const subgroupSelector = document.getElementById('subgroup-selector');
   subgroupSelector.querySelectorAll('.sub-btn').forEach(btn => {
-    if (btn.dataset.sub === state.subgroupFilter) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
+    btn.classList.toggle('active', btn.dataset.sub === state.subgroupFilter);
 
     btn.addEventListener('click', () => {
       subgroupSelector.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
@@ -543,6 +623,20 @@ function initFilters() {
       state.subgroupFilter = btn.dataset.sub;
       localStorage.setItem('aura_schedule_subgroup', state.subgroupFilter);
       renderScheduleCards();
+    });
+  });
+
+  // Display Mode selector ('calendar' vs 'all')
+  const modeSelector = document.getElementById('mode-selector');
+  modeSelector.querySelectorAll('.pill-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === state.displayMode);
+
+    btn.addEventListener('click', () => {
+      modeSelector.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.displayMode = btn.dataset.mode;
+      localStorage.setItem('aura_schedule_mode', state.displayMode);
+      renderApp();
     });
   });
 
@@ -557,91 +651,146 @@ function initFilters() {
   });
 }
 
-// --- Day Tabs (Horizontal swipe/scroll) ---
-function initDayTabs() {
+// --- Main App Render ---
+function renderApp() {
+  renderWeekBar();
+  renderDayTabs();
+  renderScheduleCards();
+  updateHomeworkBadges();
+  populateSubjectDropdown();
+}
+
+// --- Render Week Navigation Bar ---
+function renderWeekBar() {
+  const weekRangeEl = document.getElementById('week-range-text');
+  const weekStatusPill = document.getElementById('week-status-pill');
+  const todayBtn = document.getElementById('today-jump-btn');
+
+  // Calculate Sunday of current week
+  const sunday = new Date(state.currentMonday);
+  sunday.setDate(sunday.getDate() + 6);
+
+  const startDay = state.currentMonday.getDate();
+  const startMonth = state.currentMonday.getMonth();
+  const endDay = sunday.getDate();
+  const endMonth = sunday.getMonth();
+
+  let rangeText = '';
+  if (startMonth === endMonth) {
+    rangeText = `${startDay} – ${endDay} ${MONTH_NAMES_GEN[startMonth]}`;
+  } else {
+    rangeText = `${startDay} ${MONTH_NAMES_SHORT[startMonth]} – ${endDay} ${MONTH_NAMES_SHORT[endMonth]}`;
+  }
+  weekRangeEl.textContent = rangeText;
+
+  // Week type (Числитель vs Знаменатель)
+  const weekType = state.getCurrentWeekType();
+  if (state.displayMode === 'all') {
+    weekStatusPill.textContent = 'Все пары';
+    weekStatusPill.className = 'week-status-pill badge-accent';
+  } else if (weekType === 'numerator') {
+    weekStatusPill.textContent = 'Числитель';
+    weekStatusPill.className = 'week-status-pill badge-num';
+  } else {
+    weekStatusPill.textContent = 'Знаменатель';
+    weekStatusPill.className = 'week-status-pill badge-den';
+  }
+
+  // Show / Hide "Сегодня" button if looking at other weeks
+  const isCurrent = state.isViewingCurrentWeek();
+  todayBtn.classList.toggle('hidden', isCurrent);
+}
+
+// --- Render Day Tabs for Currently Viewed Week ---
+function renderDayTabs() {
   const tabsContainer = document.getElementById('day-tabs');
   tabsContainer.innerHTML = '';
 
-  const todayKey = state.getTodayDayKey();
-  const todayDate = new Date();
+  const today = new Date();
+  state.todayStr = toDateStr(today);
 
-  DAYS_META.forEach(day => {
+  // 7 days from Monday to Sunday
+  for (let i = 0; i < 7; i++) {
+    const tabDate = new Date(state.currentMonday);
+    tabDate.setDate(tabDate.getDate() + i);
+
+    const dateStr = toDateStr(tabDate);
+    const dayMeta = DAYS_META[i]; // mon, tue, wed, thu, fri, sat, sun
+
     const tab = document.createElement('button');
     tab.className = 'day-tab';
-    tab.dataset.day = day.key;
+    tab.dataset.date = dateStr;
+    tab.dataset.day = dayMeta.key;
 
-    if (day.key === todayKey) {
-      tab.classList.add('today');
-    }
-    if (day.key === state.selectedDay) {
-      tab.classList.add('active');
-    }
+    const isToday = (dateStr === state.todayStr);
+    const isSelected = (dateStr === state.selectedDateStr);
 
-    // Calculate approximate date for tab
-    const dayDiff = (day.order === 0 ? 7 : day.order) - (todayDate.getDay() === 0 ? 7 : todayDate.getDay());
-    const tabDate = new Date(todayDate);
-    tabDate.setDate(todayDate.getDate() + dayDiff);
-    const dayNumber = tabDate.getDate();
+    if (isToday) tab.classList.add('today');
+    if (isSelected) tab.classList.add('active');
 
-    // Check if this day has homework
-    const hasHw = state.homework.some(hw => hw.day === day.key && !hw.isCompleted);
+    // Check if this specific date has active homework
+    const hasHw = state.homework.some(hw => 
+      !hw.isCompleted && (hw.date === dateStr || hw.dueDate === dateStr)
+    );
+
+    const dayNum = tabDate.getDate();
+    const monthShort = MONTH_NAMES_SHORT[tabDate.getMonth()];
 
     tab.innerHTML = `
-      <span class="day-name">${day.short}</span>
-      <span class="day-num">${dayNumber}</span>
+      <span class="day-name">${dayMeta.short}</span>
+      <span class="day-num">${dayNum}</span>
+      <span class="day-month">${monthShort}</span>
       ${hasHw ? '<span class="day-tab-hw-dot"></span>' : ''}
     `;
 
     tab.addEventListener('click', () => {
       document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      state.selectedDay = day.key;
+      state.selectedDateStr = dateStr;
       renderScheduleCards();
       scrollTabIntoView(tab);
     });
 
     tabsContainer.appendChild(tab);
-  });
+  }
 
-  // Quick HW button in schedule view header
-  document.getElementById('add-quick-hw-btn').addEventListener('click', () => {
-    openHomeworkModal({ day: state.selectedDay });
-  });
-
-  document.getElementById('new-hw-floating-btn').addEventListener('click', () => {
-    openHomeworkModal({ day: state.selectedDay });
-  });
+  // Quick HW buttons
+  document.getElementById('add-quick-hw-btn').onclick = () => {
+    openHomeworkModal({ date: state.selectedDateStr });
+  };
+  document.getElementById('new-hw-floating-btn').onclick = () => {
+    openHomeworkModal({ date: state.selectedDateStr });
+  };
 }
 
 function scrollTabIntoView(tab) {
   tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 }
 
-// --- Main App Render ---
-function renderApp() {
-  renderScheduleCards();
-  updateHomeworkBadges();
-  populateSubjectDropdown();
-}
-
-// --- Render Schedule Cards for Selected Day ---
+// --- Render Schedule Cards for Selected Date ---
 function renderScheduleCards() {
   const container = document.getElementById('schedule-cards');
   const emptyState = document.getElementById('empty-day-state');
   const dayHeading = document.getElementById('current-day-heading');
   const daySubheading = document.getElementById('current-day-subheading');
 
-  const currentDayMeta = DAYS_META.find(d => d.key === state.selectedDay);
-  dayHeading.textContent = currentDayMeta ? currentDayMeta.full : 'Расписание';
+  const selectedDate = parseDateStr(state.selectedDateStr);
+  const selectedDayKey = state.getSelectedDayKey();
+  const dayMeta = DAYS_META.find(d => d.key === selectedDayKey);
 
-  // Filter pairs for day
-  const activeWeek = state.getActiveWeekType();
+  const dayFormatted = `${selectedDate.getDate()} ${MONTH_NAMES_GEN[selectedDate.getMonth()]}`;
+  dayHeading.textContent = `${dayMeta ? dayMeta.full : ''}, ${dayFormatted}`;
+
+  const weekType = state.getCurrentWeekType();
+  const weekLabel = weekType === 'numerator' ? 'Числитель' : 'Знаменатель';
+
+  // Filter pairs for this day and week type
   const dayPairs = SCHEDULE_DATA.filter(pair => {
-    if (pair.day !== state.selectedDay) return false;
+    if (pair.day !== selectedDayKey) return false;
 
-    // Week filter
-    if (activeWeek !== 'all') {
-      if (pair.week !== 'all' && pair.week !== activeWeek) {
+    // Week type filter (unless mode is 'all')
+    if (state.displayMode !== 'all') {
+      if (pair.week !== 'all' && pair.week !== weekType) {
         return false;
       }
     }
@@ -656,12 +805,11 @@ function renderScheduleCards() {
     return true;
   });
 
-  // Sort by pairNum
   dayPairs.sort((a, b) => a.pairNum - b.pairNum);
 
   daySubheading.textContent = dayPairs.length > 0
-    ? `${dayPairs.length} ${getNoun(dayPairs.length, 'пара', 'пары', 'пар')}`
-    : 'Нет занятий в расписании';
+    ? `${dayPairs.length} ${getNoun(dayPairs.length, 'пара', 'пары', 'пар')} • ${state.displayMode === 'all' ? 'Все недели' : weekLabel}`
+    : `Нет занятий в расписании • ${weekLabel}`;
 
   container.innerHTML = '';
 
@@ -676,13 +824,13 @@ function renderScheduleCards() {
   const nowHours = now.getHours();
   const nowMinutes = now.getMinutes();
   const nowTimeVal = nowHours * 60 + nowMinutes;
-  const isToday = (state.selectedDay === state.getTodayDayKey());
+  const isToday = (state.selectedDateStr === state.todayStr);
 
   dayPairs.forEach(pair => {
     const card = document.createElement('article');
     card.className = 'pair-card';
 
-    // Check if this pair is currently active
+    // Check if this pair is currently active right now
     const [startH, startM] = pair.timeStart.split(':').map(Number);
     const [endH, endM] = pair.timeEnd.split(':').map(Number);
     const startTimeVal = startH * 60 + startM;
@@ -710,8 +858,11 @@ function renderScheduleCards() {
       subgroupBadge = `<span class="badge badge-subgroup">${pair.subgroup} подгруппа</span>`;
     }
 
-    // Pair Homework items
-    const pairHomework = state.homework.filter(hw => hw.subject === pair.subject);
+    // Pair Homework: matches subject AND (date === selectedDateStr OR dueDate === selectedDateStr)
+    const pairHomework = state.homework.filter(hw => 
+      hw.subject === pair.subject && 
+      (hw.date === state.selectedDateStr || hw.dueDate === state.selectedDateStr)
+    );
 
     let hwHtml = '';
     if (pairHomework.length > 0) {
@@ -721,7 +872,7 @@ function renderScheduleCards() {
           <div class="card-hw-body" title="Нажмите, чтобы редактировать">
             <div class="card-hw-text">${escapeHtml(hw.text)}</div>
             <div class="card-hw-meta">
-              ${hw.dueDate ? `<span>📅 до ${formatDate(hw.dueDate)}</span>` : ''}
+              ${hw.dueDate ? `<span>📅 сдать до ${formatShortDate(hw.dueDate)}</span>` : ''}
               ${hw.isUrgent ? `<span class="hw-urgent-tag">🔥 Срочно</span>` : ''}
             </div>
           </div>
@@ -737,9 +888,9 @@ function renderScheduleCards() {
                 <path d="M12 20h9"></path>
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
               </svg>
-              Задания (${pairHomework.length})
+              Задания на ${formatShortDate(state.selectedDateStr)} (${pairHomework.length})
             </span>
-            <button class="btn-card-add-hw" data-subject="${escapeHtml(pair.subject)}" data-day="${pair.day}">
+            <button class="btn-card-add-hw" data-subject="${escapeHtml(pair.subject)}" data-date="${state.selectedDateStr}">
               + Добавить
             </button>
           </div>
@@ -750,8 +901,8 @@ function renderScheduleCards() {
       hwHtml = `
         <div class="pair-homework-section">
           <div class="hw-section-header">
-            <span class="hw-section-label">Домашнее задание</span>
-            <button class="btn-card-add-hw" data-subject="${escapeHtml(pair.subject)}" data-day="${pair.day}">
+            <span class="hw-section-label">Домашнее задание на это число</span>
+            <button class="btn-card-add-hw" data-subject="${escapeHtml(pair.subject)}" data-date="${state.selectedDateStr}">
               + Записать ДЗ
             </button>
           </div>
@@ -794,9 +945,7 @@ function renderScheduleCards() {
       ${hwHtml}
     `;
 
-    // Bind event handlers for homework within this card
     attachHomeworkCardEvents(card);
-
     container.appendChild(card);
   });
 }
@@ -809,7 +958,7 @@ function attachHomeworkCardEvents(card) {
       e.stopPropagation();
       openHomeworkModal({
         subject: addBtn.dataset.subject,
-        day: addBtn.dataset.day
+        date: addBtn.dataset.date || state.selectedDateStr
       });
     });
   }
@@ -854,7 +1003,7 @@ function toggleHomeworkStatus(hwId, isCompleted) {
     hw.isCompleted = isCompleted;
     state.saveHomework();
     updateHomeworkBadges();
-    initDayTabs(); // refresh dots on day tabs
+    renderDayTabs(); // refresh dots on day tabs
     if (state.currentView === 'view-schedule') {
       renderScheduleCards();
     } else if (state.currentView === 'view-homework') {
@@ -869,7 +1018,7 @@ function deleteHomework(hwId) {
   state.homework = state.homework.filter(h => h.id !== hwId);
   state.saveHomework();
   updateHomeworkBadges();
-  initDayTabs();
+  renderDayTabs();
   if (state.currentView === 'view-schedule') {
     renderScheduleCards();
   } else if (state.currentView === 'view-homework') {
@@ -901,12 +1050,13 @@ function renderAllHomeworkView() {
     displayTasks = state.homework;
   }
 
-  // Sort: urgent first, then by dueDate, then by creation
+  // Sort: active first, then urgent, then by date/dueDate
   displayTasks.sort((a, b) => {
     if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
     if (a.isUrgent !== b.isUrgent) return a.isUrgent ? -1 : 1;
-    if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
-    return 0;
+    const dateA = a.date || a.dueDate || '';
+    const dateB = b.date || b.dueDate || '';
+    return dateA.localeCompare(dateB);
   });
 
   listContainer.innerHTML = '';
@@ -916,7 +1066,7 @@ function renderAllHomeworkView() {
       <div class="empty-state">
         <div class="empty-icon">✨</div>
         <h3>Нет заданий</h3>
-        <p>В этом списке пока нет домашних заданий. Добавьте новое, чтобы ничего не забыть!</p>
+        <p>В этом списке пока нет домашних заданий. Нажмите «Новое ДЗ», чтобы записать задачу к любому дню!</p>
       </div>
     `;
     return;
@@ -927,8 +1077,8 @@ function renderAllHomeworkView() {
     card.className = `hw-full-card ${hw.isCompleted ? 'completed' : ''}`;
     card.dataset.hwId = hw.id;
 
-    const dayMeta = DAYS_META.find(d => d.key === hw.day);
-    const dayName = dayMeta ? dayMeta.short : '';
+    const classDateFormatted = hw.date ? formatFullDate(hw.date) : '';
+    const dueDateFormatted = hw.dueDate ? formatShortDate(hw.dueDate) : '';
 
     card.innerHTML = `
       <input type="checkbox" class="hw-checkbox" ${hw.isCompleted ? 'checked' : ''} aria-label="Отметить">
@@ -936,8 +1086,8 @@ function renderAllHomeworkView() {
         <span class="hw-full-subject">${escapeHtml(hw.subject)}</span>
         <div class="hw-full-text">${escapeHtml(hw.text)}</div>
         <div class="hw-full-meta">
-          ${dayName ? `<span>День: ${dayName}</span>` : ''}
-          ${hw.dueDate ? `<span>📅 Срок: ${formatDate(hw.dueDate)}</span>` : ''}
+          ${classDateFormatted ? `<span>🗓 Занятие: ${classDateFormatted}</span>` : ''}
+          ${dueDateFormatted ? `<span>⏰ Сдать до: ${dueDateFormatted}</span>` : ''}
           ${hw.isUrgent ? `<span class="hw-urgent-tag">🔥 Срочно</span>` : ''}
           ${hw.link ? `<a href="${escapeHtml(hw.link)}" target="_blank" rel="noopener" class="hw-full-link">Материалы ↗</a>` : ''}
         </div>
@@ -945,18 +1095,15 @@ function renderAllHomeworkView() {
       <button class="card-hw-delete-btn" aria-label="Удалить" title="Удалить">✕</button>
     `;
 
-    // Checkbox toggle
     card.querySelector('.hw-checkbox').addEventListener('change', (e) => {
       e.stopPropagation();
       toggleHomeworkStatus(hw.id, e.target.checked);
     });
 
-    // Edit on content click
     card.querySelector('.hw-full-content').addEventListener('click', () => {
       openHomeworkModal(hw);
     });
 
-    // Delete
     card.querySelector('.card-hw-delete-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       deleteHomework(hw.id);
@@ -973,7 +1120,6 @@ function initHomeworkModal() {
   const form = document.getElementById('hw-form');
   const deleteBtn = document.getElementById('hw-delete-btn');
 
-  // Close handlers
   closeBtn.addEventListener('click', closeHomeworkModal);
   backdrop.addEventListener('click', (e) => {
     if (e.target === backdrop) closeHomeworkModal();
@@ -985,14 +1131,21 @@ function initHomeworkModal() {
       document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
       const preset = chip.dataset.preset;
-      const dateInput = document.getElementById('hw-due-date');
+      const classDateInput = document.getElementById('hw-date-input');
+      const dueDateInput = document.getElementById('hw-due-date');
 
-      if (preset === 'tomorrow') {
-        dateInput.value = getRelativeDate(1);
+      const baseDate = parseDateStr(classDateInput.value || state.selectedDateStr);
+
+      if (preset === 'same-day') {
+        dueDateInput.value = toDateStr(baseDate);
       } else if (preset === 'next-pair') {
-        dateInput.value = getRelativeDate(2);
-      } else if (preset === 'next-week') {
-        dateInput.value = getRelativeDate(7);
+        const nextDate = new Date(baseDate);
+        nextDate.setDate(nextDate.getDate() + 7); // next week's pair
+        dueDateInput.value = toDateStr(nextDate);
+      } else if (preset === 'tomorrow') {
+        const tomDate = new Date(baseDate);
+        tomDate.setDate(tomDate.getDate() + 1);
+        dueDateInput.value = toDateStr(tomDate);
       }
     });
   });
@@ -1002,11 +1155,11 @@ function initHomeworkModal() {
     e.preventDefault();
     const editId = document.getElementById('hw-edit-id').value;
     const subject = document.getElementById('hw-subject-select').value;
+    const date = document.getElementById('hw-date-input').value || state.selectedDateStr;
     const text = document.getElementById('hw-text-input').value.trim();
-    const dueDate = document.getElementById('hw-due-date').value;
+    const dueDate = document.getElementById('hw-due-date').value || date;
     const isUrgent = document.getElementById('hw-is-urgent').checked;
     const link = document.getElementById('hw-link-input').value.trim();
-    const day = document.getElementById('hw-target-day').value || state.selectedDay;
 
     if (!text) return;
 
@@ -1015,11 +1168,11 @@ function initHomeworkModal() {
       const existing = state.homework.find(h => h.id === editId);
       if (existing) {
         existing.subject = subject;
+        existing.date = date;
         existing.text = text;
         existing.dueDate = dueDate;
         existing.isUrgent = isUrgent;
         existing.link = link;
-        existing.day = day;
       }
       showToast('Задание обновлено');
     } else {
@@ -1027,7 +1180,7 @@ function initHomeworkModal() {
       const newHw = {
         id: 'hw-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
         subject,
-        day,
+        date,
         text,
         dueDate,
         isCompleted: false,
@@ -1036,20 +1189,20 @@ function initHomeworkModal() {
         createdAt: new Date().toISOString()
       };
       state.homework.unshift(newHw);
-      showToast('Задание добавлено!');
+      showToast(`Задание сохранено на ${formatShortDate(date)}!`);
     }
 
     state.saveHomework();
     closeHomeworkModal();
     updateHomeworkBadges();
-    initDayTabs();
+    renderDayTabs();
     renderScheduleCards();
     if (state.currentView === 'view-homework') {
       renderAllHomeworkView();
     }
   });
 
-  // Delete button inside modal
+  // Delete button
   deleteBtn.addEventListener('click', () => {
     const editId = document.getElementById('hw-edit-id').value;
     if (editId) {
@@ -1063,44 +1216,45 @@ function openHomeworkModal(presetData = {}) {
   const backdrop = document.getElementById('hw-modal-backdrop');
   const modalTitle = document.getElementById('hw-modal-title');
   const editIdInput = document.getElementById('hw-edit-id');
-  const targetDayInput = document.getElementById('hw-target-day');
   const subjectSelect = document.getElementById('hw-subject-select');
+  const dateInput = document.getElementById('hw-date-input');
   const textInput = document.getElementById('hw-text-input');
   const dueDateInput = document.getElementById('hw-due-date');
   const urgentCheckbox = document.getElementById('hw-is-urgent');
   const linkInput = document.getElementById('hw-link-input');
   const deleteBtn = document.getElementById('hw-delete-btn');
 
-  // Populate subject list if not done
   populateSubjectDropdown();
 
   if (presetData.id) {
     // EDIT MODE
     modalTitle.textContent = 'Редактировать домашку';
     editIdInput.value = presetData.id;
-    targetDayInput.value = presetData.day || state.selectedDay;
     subjectSelect.value = presetData.subject;
+    dateInput.value = presetData.date || state.selectedDateStr;
     textInput.value = presetData.text;
-    dueDateInput.value = presetData.dueDate || '';
+    dueDateInput.value = presetData.dueDate || presetData.date || state.selectedDateStr;
     urgentCheckbox.checked = !!presetData.isUrgent;
     linkInput.value = presetData.link || '';
     deleteBtn.classList.remove('hidden');
   } else {
     // CREATE MODE
-    modalTitle.textContent = 'Записать домашку';
+    modalTitle.textContent = 'Записать домашку к дате';
     editIdInput.value = '';
-    targetDayInput.value = presetData.day || state.selectedDay;
     if (presetData.subject) {
       subjectSelect.value = presetData.subject;
     }
+    const targetDate = presetData.date || state.selectedDateStr;
+    dateInput.value = targetDate;
     textInput.value = '';
-    dueDateInput.value = getRelativeDate(2); // default: in 2 days
+
+    // Default deadline: same date or next week
+    dueDateInput.value = targetDate;
     urgentCheckbox.checked = false;
     linkInput.value = '';
     deleteBtn.classList.add('hidden');
   }
 
-  // Clear active presets
   document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
 
   backdrop.classList.add('open');
@@ -1111,16 +1265,16 @@ function closeHomeworkModal() {
   document.getElementById('hw-modal-backdrop').classList.remove('open');
 }
 
-// Populate Subject Dropdown from Schedule Data
+// Populate Subject Dropdown
 function populateSubjectDropdown() {
   const select = document.getElementById('hw-subject-select');
-  if (select.children.length > 0) return; // already populated
+  if (select.children.length > 0) return;
 
   const subjects = [...new Set(SCHEDULE_DATA.map(p => p.subject))].sort();
   select.innerHTML = subjects.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
 }
 
-// Update badges on bottom navigation
+// Update Badges on Bottom Nav
 function updateHomeworkBadges() {
   const badgeTotal = document.getElementById('badge-hw-total');
   const activeCount = state.homework.filter(h => !h.isCompleted).length;
@@ -1139,14 +1293,16 @@ function updateLiveTicker() {
   const pairTitle = document.getElementById('live-pair-title');
   const timeLeft = document.getElementById('live-time-left');
 
-  const todayKey = state.getTodayDayKey();
   const now = new Date();
-  const nowVal = now.getHours() * 60 + nowMinutes(now);
+  const todayKey = DAYS_META[now.getDay() === 0 ? 6 : now.getDay() - 1].key;
+  const nowVal = now.getHours() * 60 + now.getMinutes();
 
-  const activeWeek = state.getActiveWeekType();
+  const currentMonday = getMondayOfDate(now);
+  const weekType = getWeekTypeForMonday(currentMonday);
+
   const todayPairs = SCHEDULE_DATA.filter(p => {
     if (p.day !== todayKey) return false;
-    if (activeWeek !== 'all' && p.week !== 'all' && p.week !== activeWeek) return false;
+    if (p.week !== 'all' && p.week !== weekType) return false;
     if (state.subgroupFilter !== 'all' && p.subgroup !== 'all' && p.subgroup !== state.subgroupFilter) return false;
     return true;
   }).sort((a, b) => a.pairNum - b.pairNum);
@@ -1183,8 +1339,44 @@ function updateLiveTicker() {
   }
 }
 
-function nowMinutes(d) {
-  return d.getMinutes();
+// --- Touch Gestures (Swipe between days and weeks on mobile) ---
+function initTouchGestures() {
+  let touchStartX = 0;
+  let touchStartY = 0;
+  const scheduleView = document.getElementById('view-schedule');
+
+  scheduleView.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+  }, { passive: true });
+
+  scheduleView.addEventListener('touchend', (e) => {
+    const diffX = e.changedTouches[0].screenX - touchStartX;
+    const diffY = e.changedTouches[0].screenY - touchStartY;
+
+    // Detect horizontal swipe if larger than 60px and more horizontal than vertical
+    if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+      if (diffX < 0) {
+        // Swipe left => next day
+        advanceDay(1);
+      } else {
+        // Swipe right => prev day
+        advanceDay(-1);
+      }
+    }
+  }, { passive: true });
+}
+
+function advanceDay(offset) {
+  const cur = parseDateStr(state.selectedDateStr);
+  cur.setDate(cur.getDate() + offset);
+  state.selectedDateStr = toDateStr(cur);
+
+  // If outside current week, shift currentMonday
+  const newMonday = getMondayOfDate(cur);
+  state.currentMonday = newMonday;
+
+  renderApp();
 }
 
 // --- Global Search ---
@@ -1217,7 +1409,6 @@ function initSearch() {
 
 function renderSearchSuggestions(container) {
   const uniqueSubjects = [...new Set(SCHEDULE_DATA.map(p => p.subject))];
-  const uniqueTeachers = [...new Set(SCHEDULE_DATA.map(p => `${p.teacher} (${p.subject})`))];
 
   container.innerHTML = `
     <div class="settings-card">
@@ -1226,7 +1417,7 @@ function renderSearchSuggestions(container) {
         ${uniqueSubjects.map(s => `
           <div style="font-size: 13.5px; padding: 6px 0; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
             <span style="font-weight: 600;">${escapeHtml(s)}</span>
-            <button class="quick-add-btn" style="padding: 2px 8px; font-size: 11px;" onclick="openHomeworkModal({ subject: '${escapeHtml(s)}' })">+ ДЗ</button>
+            <button class="quick-add-btn" style="padding: 2px 8px; font-size: 11px;" onclick="openHomeworkModal({ subject: '${escapeHtml(s)}', date: state.selectedDateStr })">+ ДЗ</button>
           </div>
         `).join('')}
       </div>
@@ -1235,14 +1426,12 @@ function renderSearchSuggestions(container) {
 }
 
 function renderSearchResults(query, container) {
-  // Search in schedule
   const matchedPairs = SCHEDULE_DATA.filter(p => 
     p.subject.toLowerCase().includes(query) ||
     p.teacher.toLowerCase().includes(query) ||
     p.room.toLowerCase().includes(query)
   );
 
-  // Search in homework
   const matchedHw = state.homework.filter(h =>
     h.text.toLowerCase().includes(query) ||
     h.subject.toLowerCase().includes(query)
@@ -1255,7 +1444,7 @@ function renderSearchResults(query, container) {
       <div class="empty-state">
         <div class="empty-icon">🔍</div>
         <h3>Ничего не найдено</h3>
-        <p>По запросу «${escapeHtml(query)}» ничего не найдено. Проверьте правильность написания.</p>
+        <p>По запросу «${escapeHtml(query)}» ничего не найдено. Проверьте запрос.</p>
       </div>
     `;
     return;
@@ -1268,6 +1457,10 @@ function renderSearchResults(query, container) {
         <div class="hw-full-content" onclick="openHomeworkModal(state.homework.find(h => h.id === '${hw.id}'))" style="cursor: pointer;">
           <span class="hw-full-subject">${escapeHtml(hw.subject)}</span>
           <div class="hw-full-text">${escapeHtml(hw.text)}</div>
+          <div class="hw-full-meta">
+            ${hw.date ? `<span>Дата: ${formatShortDate(hw.date)}</span>` : ''}
+            ${hw.dueDate ? `<span>Дедлайн: ${formatShortDate(hw.dueDate)}</span>` : ''}
+          </div>
         </div>
       </div>
     `).join('');
@@ -1317,7 +1510,6 @@ function initSettings() {
   subgroupSelect.addEventListener('change', () => {
     state.subgroupFilter = subgroupSelect.value;
     localStorage.setItem('aura_schedule_subgroup', state.subgroupFilter);
-    // sync with header selector
     const subgroupSelector = document.getElementById('subgroup-selector');
     subgroupSelector.querySelectorAll('.sub-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.sub === state.subgroupFilter);
@@ -1331,7 +1523,7 @@ function initSettings() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.homework, null, 2));
     const dlAnchorElem = document.createElement('a');
     dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", `mbi31_homework_backup_${new Date().toISOString().split('T')[0]}.json`);
+    dlAnchorElem.setAttribute("download", `mbi31_homework_backup_${state.todayStr}.json`);
     dlAnchorElem.click();
     showToast('Резервная копия скачана!');
   });
@@ -1367,7 +1559,7 @@ function initSettings() {
       state.homework = [...DEFAULT_HOMEWORK];
       state.saveHomework();
       renderApp();
-      showToast('Домашние задания сброшены к начальным');
+      showToast('Домашние задания сброшены');
     }
   });
 }
@@ -1398,11 +1590,23 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-function formatDate(dateStr) {
+function formatShortDate(dateStr) {
   if (!dateStr) return '';
   try {
     const [y, m, d] = dateStr.split('-');
-    return `${d}.${m}`;
+    const mIdx = parseInt(m, 10) - 1;
+    return `${parseInt(d, 10)} ${MONTH_NAMES_SHORT[mIdx]}`;
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+function formatFullDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = parseDateStr(dateStr);
+    const dayMeta = DAYS_META[d.getDay() === 0 ? 6 : d.getDay() - 1];
+    return `${dayMeta ? dayMeta.short : ''} ${d.getDate()} ${MONTH_NAMES_SHORT[d.getMonth()]}`;
   } catch (e) {
     return dateStr;
   }

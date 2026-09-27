@@ -56,29 +56,47 @@
         <div class="live-time" id="live-time-left">10:10 – 11:40</div>
       </div>
 
-      <!-- Controls: Week Switcher & Subgroup Filter -->
-      <div class="filter-controls">
-        <div class="pill-segmented" id="week-selector">
-          <button class="pill-btn active" data-week="auto">
-            <span class="dot"></span>
-            <span class="text">Авто (<span id="auto-week-name">Ч</span>)</span>
-          </button>
-          <button class="pill-btn" data-week="numerator">Числитель</button>
-          <button class="pill-btn" data-week="denominator">Знаменатель</button>
-          <button class="pill-btn" data-week="all">Все</button>
+      <!-- Week Navigation Bar (Swipe & Browse Weeks) -->
+      <div class="week-nav-bar">
+        <button id="prev-week-btn" class="week-nav-btn" aria-label="Предыдущая неделя" title="Предыдущая неделя">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+
+        <div class="week-nav-center" id="week-nav-center">
+          <div class="week-dates-title" id="week-range-text">21 – 27 сентября</div>
+          <div class="week-badges-row">
+            <span class="week-status-pill badge-den" id="week-status-pill">Знаменатель</span>
+            <button id="today-jump-btn" class="jump-today-btn hidden" title="Вернуться к сегодняшнему дню">Сегодня</button>
+          </div>
         </div>
 
+        <button id="next-week-btn" class="week-nav-btn" aria-label="Следующая неделя" title="Следующая неделя">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Secondary Filters: Subgroup & Display Mode -->
+      <div class="filter-controls">
         <div class="subgroup-segmented" id="subgroup-selector">
           <button class="sub-btn active" data-sub="all" title="Показывать все подгруппы">Все подгруппы</button>
           <button class="sub-btn" data-sub="1" title="1 подгруппа (IELTS Ср)">1 подгр.</button>
           <button class="sub-btn" data-sub="2" title="2 подгруппа (IELTS Сб)">2 подгр.</button>
+        </div>
+
+        <div class="pill-segmented" id="mode-selector">
+          <button class="pill-btn active" data-mode="calendar" id="mode-calendar-btn">По календарю</button>
+          <button class="pill-btn" data-mode="all" id="mode-all-btn">Все пары</button>
         </div>
       </div>
 
       <!-- Day of the Week Horizontal Bar -->
       <div class="day-tabs-scroll" id="day-tabs-container">
         <div class="day-tabs" id="day-tabs">
-          <!-- Filled dynamically by JS -->
+          <!-- Filled dynamically by JS with specific dates -->
         </div>
       </div>
     </header>
@@ -297,6 +315,7 @@
       <form id="hw-form" class="sheet-form">
         <input type="hidden" id="hw-edit-id" value="">
         <input type="hidden" id="hw-target-day" value="">
+        <input type="hidden" id="hw-target-date" value="">
 
         <!-- Select Subject -->
         <div class="form-group">
@@ -304,6 +323,12 @@
           <select id="hw-subject-select" class="form-select" required>
             <!-- Options populated dynamically -->
           </select>
+        </div>
+
+        <!-- Class Date (Exact Calendar Date) -->
+        <div class="form-group">
+          <label for="hw-date-input" class="form-label">Дата занятия / пары</label>
+          <input type="date" id="hw-date-input" class="form-input" required>
         </div>
 
         <!-- Task Content -->
@@ -314,13 +339,13 @@
 
         <!-- Deadline / Due Date & Quick Presets -->
         <div class="form-group">
-          <label for="hw-due-date" class="form-label">Дедлайн (к какой дате)</label>
+          <label for="hw-due-date" class="form-label">Дедлайн (сдать к какой дате)</label>
           <div class="quick-preset-chips">
-            <button type="button" class="preset-chip" data-preset="next-pair">К след. паре</button>
+            <button type="button" class="preset-chip" data-preset="same-day">К этой дате</button>
+            <button type="button" class="preset-chip" data-preset="next-pair">К след. паре (+7 дн)</button>
             <button type="button" class="preset-chip" data-preset="tomorrow">Завтра</button>
-            <button type="button" class="preset-chip" data-preset="next-week">Через неделю</button>
           </div>
-          <input type="date" id="hw-due-date" class="form-input">
+          <input type="date" id="hw-due-date" class="form-input" required>
         </div>
 
         <!-- Priority & Urgent Flag -->
