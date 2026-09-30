@@ -6,7 +6,6 @@ on:
   workflow_run:
     workflows: ["Diary Update Trigger"]
     types: [completed]
-    branches: ["togu-diary"]
   workflow_dispatch:
 
 permissions:
