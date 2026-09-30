@@ -38,10 +38,13 @@
         </div>
       </div>
 
-      <div class="sidebar-student-card" id="sidebar-student-card" title="Нажмите, чтобы настроить профиль">
+      <div class="sidebar-student-card" id="sidebar-student-card" title="Нажмите, чтобы сменить аккаунт или роль">
         <div class="sidebar-student-avatar" id="sidebar-avatar-initials">СТ</div>
         <div class="sidebar-student-info">
-          <div class="sidebar-student-name" id="sidebar-student-name">Студент</div>
+          <div class="sidebar-name-row">
+            <div class="sidebar-student-name" id="sidebar-student-name">Студент</div>
+            <span class="sidebar-role-badge role-student" id="sidebar-role-badge">Студент</span>
+          </div>
           <div class="sidebar-student-meta">
             <span class="sidebar-group-badge" id="sidebar-student-group">МБИ(б)-31</span>
             <span class="sidebar-divider">·</span>
@@ -86,6 +89,17 @@
           </div>
           <span class="nav-label">Успеваемость БРС</span>
           <span class="nav-shortcut">3</span>
+        </button>
+
+        <button class="nav-item hidden" data-target="view-teacher" id="sidebar-btn-teacher">
+          <div class="nav-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="18" height="18">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+          </div>
+          <span class="nav-label">Кабинет преп.</span>
+          <span class="nav-shortcut">4</span>
         </button>
 
         <button class="nav-item" data-target="view-search" id="sidebar-btn-search">
@@ -147,10 +161,11 @@
 
       <header class="app-header">
         <div class="header-top">
-          <div class="brand-block mobile-only" id="header-profile-block" title="Нажмите, чтобы настроить профиль">
+          <div class="brand-block mobile-only" id="header-profile-block" title="Нажмите, чтобы сменить аккаунт или роль">
             <span class="brand-group" id="header-group-name">МБИ(б)-31</span>
             <span class="brand-divider">·</span>
             <span class="brand-student" id="header-student-name">Студент</span>
+            <span class="mobile-role-pill" id="header-role-pill">Студент</span>
           </div>
 
           <div class="header-desktop-title desktop-only">
@@ -223,6 +238,8 @@
       <main class="main-content">
 
         <section id="view-schedule" class="view-panel active">
+
+          <div id="teacher-announcements-banner" class="teacher-announcements-banner hidden"></div>
 
           <div id="day-schedule-view" class="day-schedule-view">
             <div class="day-overview-header">
@@ -329,6 +346,85 @@
           </div>
         </section>
 
+        <section id="view-teacher" class="view-panel">
+          <div class="section-top">
+            <div>
+              <h2 class="section-title">Кабинет преподавателя</h2>
+              <p class="section-subtitle">Вывешивание заданий для группы, контроль сдачи и объявления кафедры</p>
+            </div>
+            <button id="open-teacher-hw-btn" class="btn btn-primary btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Вывесить ДЗ группе
+            </button>
+          </div>
+
+          <div class="teacher-profile-card">
+            <div class="teacher-avatar-big" id="teacher-avatar-big">ПП</div>
+            <div class="teacher-info-col">
+              <div class="teacher-name-row">
+                <div class="teacher-name-title" id="teacher-view-name">Мурашова Е. В.</div>
+                <span class="teacher-status-badge">Преподаватель ТОГУ</span>
+              </div>
+              <div class="teacher-dept-title" id="teacher-view-dept">Кафедра «Экономика и менеджмент»</div>
+              <div class="teacher-subjects-tags" id="teacher-view-subjects">
+                <span class="subject-tag">Анализ хозяйственной деятельности</span>
+                <span class="subject-tag">Международные экономические организации</span>
+              </div>
+            </div>
+            <button id="teacher-profile-switch-btn" class="btn btn-secondary btn-sm" title="Сменить преподавателя или роль">
+              Сменить аккаунт
+            </button>
+          </div>
+
+          <div class="teacher-tabs-row">
+            <button class="teacher-tab-btn active" data-ttab="posted-hw" id="ttab-btn-hw">Опубликованные задания (<span id="teacher-hw-count">0</span>)</button>
+            <button class="teacher-tab-btn" data-ttab="announcements" id="ttab-btn-ann">Объявления кафедры (<span id="teacher-ann-count">0</span>)</button>
+            <button class="teacher-tab-btn" data-ttab="group-students" id="ttab-btn-students">Журнал группы (<span id="teacher-students-count">МБИ(б)-31</span>)</button>
+          </div>
+
+          <div id="teacher-tab-posted-hw" class="teacher-tab-content active">
+            <div id="teacher-hw-list" class="teacher-hw-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <div id="teacher-tab-announcements" class="teacher-tab-content hidden">
+            <div class="announcement-composer-card">
+              <h3 class="card-subtitle">Опубликовать объявление для группы</h3>
+              <form id="announcement-form">
+                <textarea id="announcement-text-input" class="form-textarea" rows="2" placeholder="Например: консультация перед контрольной точкой пройдет в четверг в 15:30 в ауд. 301л..." required></textarea>
+                <div class="announcement-form-footer">
+                  <label class="custom-checkbox-container">
+                    <input type="checkbox" id="announcement-is-urgent">
+                    <span class="custom-checkbox-mark"></span>
+                    <span class="checkbox-text">Важное (закрепить сверху)</span>
+                  </label>
+                  <button type="submit" class="btn btn-primary btn-sm">Опубликовать</button>
+                </div>
+              </form>
+            </div>
+            <div id="teacher-announcements-list" class="teacher-ann-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <div id="teacher-tab-group-students" class="teacher-tab-content hidden">
+            <div class="students-roster-card">
+              <div class="roster-header-row">
+                <h3 class="card-subtitle">Студенты группы МБИ(б)-31</h3>
+                <span class="roster-badge">Осенний семестр 2026/27</span>
+              </div>
+              <p class="settings-hint">Отметки о сдаче заданий кафедры студентами группы.</p>
+              <div id="teacher-students-roster" class="students-roster-list">
+                <!-- Rendered via JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section id="view-search" class="view-panel">
           <div class="search-box">
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -404,6 +500,32 @@
           </div>
 
           <div class="settings-card">
+            <h3 class="card-subtitle">Облачная база данных и синхронизация группы</h3>
+            <p class="settings-hint mb-3">Дневник поддерживает работу с общей облачной базой данных (Supabase PostgreSQL / Cloud Relay) для автоматической раздачи ДЗ преподавателей всем студентам группы.</p>
+            <div class="settings-form-grid">
+              <div class="form-group">
+                <label for="setting-supabase-url" class="form-label">Supabase Project URL (опционально)</label>
+                <input type="url" id="setting-supabase-url" class="form-input" placeholder="https://xyzcompany.supabase.co">
+              </div>
+              <div class="form-group">
+                <label for="setting-supabase-key" class="form-label">Supabase Anon Key (опционально)</label>
+                <input type="password" id="setting-supabase-key" class="form-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+              </div>
+            </div>
+            <div class="btn-group-stacked mt-2">
+              <button id="save-cloud-settings-btn" class="btn btn-primary btn-sm align-self-start">
+                Сохранить подключение
+              </button>
+              <button id="export-group-code-btn" class="btn btn-secondary btn-sm">
+                📋 Скопировать код синхронизации группы
+              </button>
+              <button id="import-group-code-btn" class="btn btn-secondary btn-sm">
+                📥 Вставить код синхронизации от старосты / преподавателя
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-card">
             <h3 class="card-subtitle">Обозначения корпусов ТОГУ</h3>
             <ul class="legend-list">
               <li><span class="legend-code">л</span> — Левый корпус (напр. 301л, 404л)</li>
@@ -449,6 +571,16 @@
             </svg>
           </div>
           <span class="nav-label">БРС</span>
+        </button>
+
+        <button class="nav-item hidden" data-target="view-teacher" id="nav-btn-teacher">
+          <div class="nav-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+          </div>
+          <span class="nav-label">Преподаватель</span>
         </button>
 
         <button class="nav-item" data-target="view-search" id="nav-btn-search">
@@ -568,6 +700,204 @@
           <button type="submit" class="btn btn-primary flex-1">Начать пользоваться</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div id="auth-modal-backdrop" class="modal-backdrop hidden">
+    <div class="bottom-sheet auth-sheet">
+      <div class="sheet-drag-handle"></div>
+      <div class="sheet-header">
+        <h3 class="sheet-title">Личный кабинет и аккаунты ТОГУ</h3>
+        <button id="auth-modal-close" class="close-sheet-btn" aria-label="Закрыть">✕</button>
+      </div>
+
+      <div class="auth-current-profile">
+        <div class="auth-profile-avatar" id="auth-profile-avatar">СТ</div>
+        <div class="auth-profile-info">
+          <div class="auth-profile-name" id="auth-profile-name">Студент</div>
+          <div class="auth-profile-meta" id="auth-profile-meta">Роль: Студент · Группа МБИ(б)-31</div>
+        </div>
+      </div>
+
+      <div class="auth-segmented-nav">
+        <button type="button" class="auth-seg-btn active" data-authtab="quick-switch" id="authtab-btn-quick">Быстрый вход</button>
+        <button type="button" class="auth-seg-btn" data-authtab="register" id="authtab-btn-register">Регистрация / Вход</button>
+      </div>
+
+      <div id="authtab-quick-switch" class="auth-tab-panel active">
+        <div class="auth-section-label">Выберите готовый аккаунт для мгновенного входа:</div>
+        <div class="quick-accounts-list">
+          <button type="button" class="account-choice-btn" data-quick-user="student-mbi">
+            <div class="account-choice-avatar student-avatar">🎓</div>
+            <div class="account-choice-info">
+              <span class="account-choice-title">Студент группы</span>
+              <span class="account-choice-sub">Группа МБИ(б)-31 · Дневник, БРС, просмотр ДЗ</span>
+            </div>
+            <span class="account-choice-badge">Студент</span>
+          </button>
+
+          <button type="button" class="account-choice-btn" data-quick-user="starosta">
+            <div class="account-choice-avatar starosta-avatar">⭐</div>
+            <div class="account-choice-info">
+              <span class="account-choice-title">Староста группы</span>
+              <span class="account-choice-sub">Группа МБИ(б)-31 · Управление объявлениями</span>
+            </div>
+            <span class="account-choice-badge">Староста</span>
+          </button>
+
+          <button type="button" class="account-choice-btn" data-quick-user="teacher-murashova">
+            <div class="account-choice-avatar teacher-avatar">👨‍🏫</div>
+            <div class="account-choice-info">
+              <span class="account-choice-title">Мурашова Е. В.</span>
+              <span class="account-choice-sub">Доцент, к.э.н. · Анализ хоз. деятельности, МЭО</span>
+            </div>
+            <span class="account-choice-badge teacher-badge">Преподаватель</span>
+          </button>
+
+          <button type="button" class="account-choice-btn" data-quick-user="teacher-loginova">
+            <div class="account-choice-avatar teacher-avatar">👩‍🏫</div>
+            <div class="account-choice-info">
+              <span class="account-choice-title">Логинова В. А.</span>
+              <span class="account-choice-sub">Доцент, к.э.н. · Внешнеторговые операции</span>
+            </div>
+            <span class="account-choice-badge teacher-badge">Преподаватель</span>
+          </button>
+
+          <button type="button" class="account-choice-btn" data-quick-user="teacher-penegina">
+            <div class="account-choice-avatar teacher-avatar">👩‍🏫</div>
+            <div class="account-choice-info">
+              <span class="account-choice-title">Пенегина И. Т.</span>
+              <span class="account-choice-sub">Доцент, к.э.н. · Стратегический менеджмент</span>
+            </div>
+            <span class="account-choice-badge teacher-badge">Преподаватель</span>
+          </button>
+
+          <button type="button" class="account-choice-btn" data-quick-user="teacher-ostapenko">
+            <div class="account-choice-avatar teacher-avatar">👨‍🏫</div>
+            <div class="account-choice-info">
+              <span class="account-choice-title">Остапенко А. Б.</span>
+              <span class="account-choice-sub">Доцент, к.ф.н. · Подготовка к IELTS/TOEFL</span>
+            </div>
+            <span class="account-choice-badge teacher-badge">Преподаватель</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="authtab-register" class="auth-tab-panel hidden">
+        <form id="auth-custom-form" class="sheet-form">
+          <div class="form-group">
+            <label class="form-label">Тип учетной записи</label>
+            <div class="role-selector-row">
+              <button type="button" class="role-select-btn active" data-role="student" id="role-select-student">🎓 Студент</button>
+              <button type="button" class="role-select-btn" data-role="teacher" id="role-select-teacher">👨‍🏫 Преподаватель</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="auth-name-input" class="form-label">ФИО</label>
+            <input type="text" id="auth-name-input" class="form-input" placeholder="Например: Иванов Иван Иванович" required>
+          </div>
+
+          <div class="form-group" id="auth-group-field">
+            <label for="auth-group-input" class="form-label">Академическая группа</label>
+            <input type="text" id="auth-group-input" class="form-input" value="МБИ(б)-31" placeholder="Например: МБИ(б)-31">
+          </div>
+
+          <div class="form-group hidden" id="auth-dept-field">
+            <label for="auth-dept-input" class="form-label">Кафедра</label>
+            <input type="text" id="auth-dept-input" class="form-input" placeholder="Например: Кафедра высшей математики">
+          </div>
+
+          <div class="form-group hidden" id="auth-subject-field">
+            <label for="auth-subject-input" class="form-label">Преподаваемые дисциплины (через запятую)</label>
+            <input type="text" id="auth-subject-input" class="form-input" placeholder="Например: Стратегический менеджмент">
+          </div>
+
+          <div class="sheet-actions mt-3">
+            <button type="submit" class="btn btn-primary flex-1">Войти в дневник</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="teacher-post-modal-backdrop" class="modal-backdrop hidden">
+    <div class="bottom-sheet teacher-post-sheet">
+      <div class="sheet-drag-handle"></div>
+      <div class="sheet-header">
+        <h3 class="sheet-title" id="teacher-modal-title">Вывесить задание для группы</h3>
+        <button id="teacher-post-modal-close" class="close-sheet-btn" aria-label="Закрыть">✕</button>
+      </div>
+
+      <form id="teacher-post-hw-form" class="sheet-form">
+        <input type="hidden" id="teacher-post-edit-id" value="">
+
+        <div class="form-group">
+          <label for="teacher-post-group" class="form-label">Целевая группа</label>
+          <input type="text" id="teacher-post-group" class="form-input" value="МБИ(б)-31" required>
+        </div>
+
+        <div class="form-group">
+          <label for="teacher-post-subject" class="form-label">Дисциплина</label>
+          <select id="teacher-post-subject" class="form-select" required>
+            <!-- Injected by JS -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="teacher-post-type" class="form-label">Тип задания</label>
+          <select id="teacher-post-type" class="form-select">
+            <option value="regular">Обычное домашнее задание</option>
+            <option value="lab">Лабораторная работа</option>
+            <option value="brs_checkpoint">Контрольная точка БРС (баллы)</option>
+            <option value="exam_debt">Зачёт / Экзаменационный долг</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="teacher-post-title" class="form-label">Тема / Краткое название</label>
+          <input type="text" id="teacher-post-title" class="form-input" placeholder="Например: Лабораторная работа №3: Анализ платежеспособности" required>
+        </div>
+
+        <div class="form-group">
+          <label for="teacher-post-text" class="form-label">Текст задания и требования к оформлению</label>
+          <textarea id="teacher-post-text" class="form-textarea" rows="4" placeholder="Опишите требования к выполнению, варианты заданий, список литературы..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="teacher-post-due-date" class="form-label">Срок сдачи (дедлайн)</label>
+          <input type="date" id="teacher-post-due-date" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+          <label for="teacher-post-link" class="form-label">Ссылка на материалы / ЭУК ТОГУ (опционально)</label>
+          <input type="url" id="teacher-post-link" class="form-input" placeholder="https://portal.togudv.ru/...">
+        </div>
+
+        <div class="sheet-actions">
+          <button type="button" id="teacher-post-delete-btn" class="btn btn-danger hidden">Удалить</button>
+          <button type="submit" class="btn btn-primary flex-1">Опубликовать для группы</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="sync-code-modal-backdrop" class="modal-backdrop hidden">
+    <div class="bottom-sheet sync-sheet">
+      <div class="sheet-drag-handle"></div>
+      <div class="sheet-header">
+        <h3 class="sheet-title" id="sync-modal-title">Синхронизация базы группы</h3>
+        <button id="sync-modal-close" class="close-sheet-btn" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="sheet-form">
+        <p class="settings-hint" id="sync-modal-hint">Скопируйте этот код и отправьте в чат группы. Любой студент сможет вставить его и получить все актуальные задания.</p>
+        <div class="form-group">
+          <textarea id="sync-code-textarea" class="form-textarea" rows="6" placeholder="Вставьте сюда JSON-код синхронизации..."></textarea>
+        </div>
+        <div class="sheet-actions">
+          <button type="button" id="sync-code-action-btn" class="btn btn-primary flex-1">Скопировать код</button>
+        </div>
+      </div>
     </div>
   </div>
 
