@@ -1,10 +1,5 @@
-/* ==========================================================================
-   SCHEDULE & HOMEWORK — HUMAN MINIMALIST DESIGN SYSTEM
-   Inspired by Things 3, Apple Reminders & Linear. No AI tropes, no glowing neon.
-   ========================================================================== */
-
 :root {
-  /* Dark Theme Palette (Default) — Matte Graphite & Zinc */
+
   --bg-app: #0a0a0c;
   --bg-surface: #121215;
   --bg-surface-elevated: #18181c;
@@ -57,7 +52,7 @@
 }
 
 [data-theme="light"] {
-  /* Light Theme Palette — Clean Swiss Paper & Monochrome */
+
   --bg-app: #f6f6f8;
   --bg-surface: #ffffff;
   --bg-surface-elevated: #f0f0f4;
@@ -98,9 +93,6 @@
   --shadow-sheet: 0 -10px 40px rgba(0, 0, 0, 0.1);
 }
 
-/* ==========================================================================
-   Base Reset
-   ========================================================================== */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -122,7 +114,6 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
 }
 
-/* Mobile Container */
 .app-wrapper {
   width: 100%;
   max-width: 480px;
@@ -136,9 +127,6 @@ body {
   padding-bottom: 84px;
 }
 
-/* ==========================================================================
-   App Header
-   ========================================================================== */
 .app-header {
   position: sticky;
   top: 0;
@@ -217,9 +205,6 @@ body {
 [data-theme="light"] .sun-icon { display: none; }
 [data-theme="light"] .moon-icon { display: block; }
 
-/* ==========================================================================
-   Week Navigation Bar
-   ========================================================================== */
 .week-nav-bar {
   display: flex;
   align-items: center;
@@ -313,9 +298,6 @@ body {
   color: var(--accent-inverse);
 }
 
-/* ==========================================================================
-   Filter Controls (Segmented Tabs)
-   ========================================================================== */
 .filter-controls {
   display: flex;
   align-items: center;
@@ -389,9 +371,6 @@ body {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
-/* ==========================================================================
-   Day Horizontal Tabs (Native Strip)
-   ========================================================================== */
 .day-tabs-scroll {
   overflow-x: auto;
   scrollbar-width: none;
@@ -485,9 +464,6 @@ body {
   border-radius: 50%;
 }
 
-/* ==========================================================================
-   Main Content & Views
-   ========================================================================== */
 .main-content {
   flex: 1;
   padding: 16px;
@@ -505,7 +481,6 @@ body {
   display: flex;
 }
 
-/* Day Overview Header */
 .day-overview-header {
   display: flex;
   align-items: center;
@@ -553,9 +528,6 @@ body {
   height: 13px;
 }
 
-/* ==========================================================================
-   Schedule Cards — Human, Quiet, Clear
-   ========================================================================== */
 .schedule-cards-list {
   display: flex;
   flex-direction: column;
@@ -715,9 +687,6 @@ body {
   color: var(--text-muted);
 }
 
-/* ==========================================================================
-   Homework Section on Pair Card
-   ========================================================================== */
 .pair-homework-section {
   border-top: 1px solid var(--border-subtle);
   padding-top: 8px;
@@ -789,7 +758,6 @@ body {
   color: var(--text-muted);
 }
 
-/* Tactile Circular Checkbox (Things 3 style) */
 .hw-checkbox {
   appearance: none;
   -webkit-appearance: none;
@@ -876,9 +844,6 @@ body {
   color: var(--urgent-text);
 }
 
-/* ==========================================================================
-   Empty States
-   ========================================================================== */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -913,9 +878,6 @@ body {
   line-height: 1.4;
 }
 
-/* ==========================================================================
-   All Homework View (View 2)
-   ========================================================================== */
 .section-top {
   display: flex;
   align-items: center;
@@ -1033,9 +995,6 @@ body {
   font-weight: 500;
 }
 
-/* ==========================================================================
-   Search View (View 3)
-   ========================================================================== */
 .search-box {
   display: flex;
   align-items: center;
@@ -1086,9 +1045,6 @@ body {
   gap: 10px;
 }
 
-/* ==========================================================================
-   Settings View (View 4)
-   ========================================================================== */
 .settings-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -1170,9 +1126,6 @@ body {
   border-radius: 3px;
 }
 
-/* ==========================================================================
-   Bottom Navigation Bar
-   ========================================================================== */
 .bottom-nav {
   position: fixed;
   bottom: 0;
@@ -1237,9 +1190,6 @@ body {
   text-align: center;
 }
 
-/* ==========================================================================
-   Modal Bottom Sheet
-   ========================================================================== */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1442,9 +1392,6 @@ body {
   margin-top: 4px;
 }
 
-/* ==========================================================================
-   Buttons & Utilities
-   ========================================================================== */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -1505,7 +1452,6 @@ body {
   cursor: pointer;
 }
 
-/* Toast Notification */
 .toast {
   position: fixed;
   bottom: 74px;
@@ -1534,7 +1480,6 @@ body {
 .flex-1 { flex: 1; }
 .mb-3 { margin-bottom: 10px; }
 
-/* Responsive Visibility Helpers */
 .desktop-sidebar { display: none; }
 .desktop-only { display: none !important; }
 .mobile-only { display: flex; }
@@ -1547,9 +1492,6 @@ body {
   min-width: 0;
 }
 
-/* ==========================================================================
-   Format Toggle (По дням vs Сетка недели)
-   ========================================================================== */
 .view-format-toggle {
   display: inline-flex;
   align-items: center;
@@ -1584,9 +1526,6 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-/* ==========================================================================
-   Full Week Timetable Grid (Desktop Calendar Board)
-   ========================================================================== */
 .week-grid-timetable {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -1758,9 +1697,6 @@ body {
   margin-left: auto;
 }
 
-/* ==========================================================================
-   BRS Grade Tracker (View 3)
-   ========================================================================== */
 .grades-header-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -1838,7 +1774,6 @@ body {
 .text-success { color: #10b981 !important; }
 .text-danger { color: #ef4444 !important; }
 
-/* Subject Grade Card */
 .grade-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -2021,9 +1956,6 @@ body {
   color: var(--text-muted);
 }
 
-/* ==========================================================================
-   Settings Form Grid & TOGU Pitch Card
-   ========================================================================== */
 .settings-section {
   display: flex;
   flex-direction: column;
@@ -2149,9 +2081,6 @@ body {
   background: var(--bg-surface-elevated);
 }
 
-/* ==========================================================================
-   Desktop Sidebar Layout
-   ========================================================================== */
 .desktop-sidebar {
   display: none;
   flex-direction: column;
@@ -2438,7 +2367,6 @@ body {
   color: var(--text-primary);
 }
 
-/* Desktop Header Title */
 .header-desktop-title {
   display: none;
   flex-direction: column;
@@ -2459,14 +2387,12 @@ body {
   color: var(--text-muted);
 }
 
-/* Secondary Filters Right Cluster */
 .right-filters-cluster {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-/* BRS Thresholds Guide Bar */
 .brs-legend-bar {
   display: flex;
   align-items: center;
@@ -2506,7 +2432,6 @@ body {
   color: #ef4444;
 }
 
-/* Settings Highlights & Checklists */
 .settings-card.highlight-card {
   border-color: rgba(59, 130, 246, 0.3);
   background: linear-gradient(180deg, var(--bg-card) 0%, rgba(59, 130, 246, 0.03) 100%);
@@ -2525,10 +2450,6 @@ body {
   font-weight: 500;
 }
 
-
-/* ==========================================================================
-   Desktop Responsive Breakpoint (≥ 768px)
-   ========================================================================== */
 @media (min-width: 768px) {
   body {
     background-color: var(--bg-surface-elevated);
@@ -2578,28 +2499,24 @@ body {
     padding: 24px 28px 48px 28px;
   }
 
-  /* Multi-column grid for schedule cards in day view on desktop */
   .schedule-cards-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
     gap: 14px;
   }
 
-  /* Multi-column homework list */
   .hw-full-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     gap: 12px;
   }
 
-  /* Multi-column grade cards */
   #grades-cards-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
     gap: 14px;
   }
 
-  /* Modal on desktop: centered dialog instead of bottom sheet */
   .modal-backdrop {
     align-items: center;
   }
@@ -2615,9 +2532,6 @@ body {
   }
 }
 
-/* ==========================================================================
-   Print Stylesheet (window.print() / A4 PDF Export)
-   ========================================================================== */
 @media print {
   body {
     background: #ffffff !important;
@@ -2689,4 +2603,3 @@ body {
     margin-bottom: 8px !important;
   }
 }
-

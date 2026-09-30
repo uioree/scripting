@@ -1,5 +1,4 @@
-// Service Worker for offline access to schedule
-const CACHE_NAME = 'mbi31-schedule-v1';
+const CACHE_NAME = 'togu-diary-v2';
 const ASSETS = [
   './',
   './index.html',

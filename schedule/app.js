@@ -1,15 +1,5 @@
-/**
- * Aura Schedule & Homework Tracker
- * Group: МБИ(б)-31 | ТОГУ
- * Student: Денис Федосеенко
- * Features: Multi-week browsing (Numerator/Denominator) & Date-specific Homework
- */
-
-// ==========================================
-// 1. DATA: University Schedule for МБИ(б)-31
-// ==========================================
 const SCHEDULE_DATA = [
-  // --- ВТОРНИК ---
+
   {
     id: 'tue-1-num',
     day: 'tue',
@@ -17,11 +7,11 @@ const SCHEDULE_DATA = [
     timeStart: '08:30',
     timeEnd: '10:00',
     subject: 'Анализ хозяйственной деятельности предприятия',
-    type: 'practice', // пр
+    type: 'practice',
     room: '301л',
     teacher: 'Мурашова Е. В.',
     teacherRole: 'Доцент, к.э.н.',
-    week: 'numerator', // Ч
+    week: 'numerator',
     subgroup: 'all',
     hasEuk: true
   },
@@ -32,11 +22,11 @@ const SCHEDULE_DATA = [
     timeStart: '08:30',
     timeEnd: '10:00',
     subject: 'Международные экономические организации и региональные объединения',
-    type: 'lecture', // лк
+    type: 'lecture',
     room: '440л',
     teacher: 'Мурашова Е. В.',
     teacherRole: 'Доцент, к.э.н.',
-    week: 'denominator', // З
+    week: 'denominator',
     subgroup: 'all',
     hasEuk: false
   },
@@ -47,11 +37,11 @@ const SCHEDULE_DATA = [
     timeStart: '10:10',
     timeEnd: '11:40',
     subject: 'Организация и техника внешнеторговых операций',
-    type: 'lecture', // лк
+    type: 'lecture',
     room: '434ц',
     teacher: 'Логинова В. А.',
     teacherRole: 'Доцент, к.э.н.',
-    week: 'numerator', // Ч
+    week: 'numerator',
     subgroup: 'all',
     hasEuk: false
   },
@@ -62,11 +52,11 @@ const SCHEDULE_DATA = [
     timeStart: '10:10',
     timeEnd: '11:40',
     subject: 'Стратегический менеджмент',
-    type: 'lecture', // лк
+    type: 'lecture',
     room: '434ц',
     teacher: 'Пенегина И. Т.',
     teacherRole: 'Доцент, к.э.н.',
-    week: 'denominator', // З
+    week: 'denominator',
     subgroup: 'all',
     hasEuk: false
   },
@@ -77,11 +67,11 @@ const SCHEDULE_DATA = [
     timeStart: '11:50',
     timeEnd: '13:20',
     subject: 'Международный менеджмент',
-    type: 'lecture', // лк
+    type: 'lecture',
     room: '434ц',
     teacher: 'Тюленева Т. И.',
     teacherRole: 'Доцент, к.э.н.',
-    week: 'all', // Каждую неделю
+    week: 'all',
     subgroup: 'all',
     hasEuk: true
   },
@@ -92,16 +82,15 @@ const SCHEDULE_DATA = [
     timeStart: '13:50',
     timeEnd: '15:20',
     subject: 'Организация и техника внешнеторговых операций',
-    type: 'lecture', // лк
+    type: 'lecture',
     room: '434ц',
     teacher: 'Логинова В. А.',
     teacherRole: 'Доцент, к.э.н.',
-    week: 'denominator', // З
+    week: 'denominator',
     subgroup: 'all',
     hasEuk: false
   },
 
-  // --- СРЕДА ---
   {
     id: 'wed-1-num',
     day: 'wed',
@@ -109,11 +98,11 @@ const SCHEDULE_DATA = [
     timeStart: '08:30',
     timeEnd: '10:00',
     subject: 'Подготовка к международному экзамену IELTS/TOEFL',
-    type: 'lecture', // лк
+    type: 'lecture',
     room: '404л',
     teacher: 'Остапенко А. Б.',
     teacherRole: 'Доцент, к.ф.н.',
-    week: 'numerator', // Ч
+    week: 'numerator',
     subgroup: 'all',
     hasEuk: true
   },
@@ -124,11 +113,11 @@ const SCHEDULE_DATA = [
     timeStart: '10:10',
     timeEnd: '11:40',
     subject: 'Международные валютно-кредитные отношения',
-    type: 'lecture', // лк
+    type: 'lecture',
     room: '229па',
     teacher: 'Безродных А. Ю.',
     teacherRole: 'Преподаватель',
-    week: 'numerator', // Ч
+    week: 'numerator',
     subgroup: 'all',
     hasEuk: false
   },
@@ -139,12 +128,12 @@ const SCHEDULE_DATA = [
     timeStart: '10:10',
     timeEnd: '11:40',
     subject: 'Подготовка к международному экзамену IELTS/TOEFL',
-    type: 'practice', // пр
+    type: 'practice',
     room: '359ца',
     teacher: 'Остапенко А. Б.',
     teacherRole: 'Доцент, к.ф.н.',
-    week: 'denominator', // З
-    subgroup: '1', // 1 подгруппа
+    week: 'denominator',
+    subgroup: '1',
     hasEuk: true
   },
   {
@@ -154,7 +143,7 @@ const SCHEDULE_DATA = [
     timeStart: '11:50',
     timeEnd: '13:20',
     subject: 'Международные валютно-кредитные отношения',
-    type: 'practice', // пр
+    type: 'practice',
     room: '106п',
     teacher: 'Безродных А. Ю.',
     teacherRole: 'Преподаватель',
@@ -163,7 +152,6 @@ const SCHEDULE_DATA = [
     hasEuk: false
   },
 
-  // --- ЧЕТВЕРГ ---
   {
     id: 'thu-2',
     day: 'thu',
@@ -171,7 +159,7 @@ const SCHEDULE_DATA = [
     timeStart: '10:10',
     timeEnd: '11:40',
     subject: 'Международный менеджмент',
-    type: 'practice', // пр
+    type: 'practice',
     room: '323п',
     teacher: 'Тюленева Т. И.',
     teacherRole: 'Доцент, к.э.н.',
@@ -186,7 +174,7 @@ const SCHEDULE_DATA = [
     timeStart: '11:50',
     timeEnd: '13:20',
     subject: 'Международные экономические организации и региональные объединения',
-    type: 'practice', // пр
+    type: 'practice',
     room: '301л',
     teacher: 'Мурашова Е. В.',
     teacherRole: 'Доцент, к.э.н.',
@@ -201,7 +189,7 @@ const SCHEDULE_DATA = [
     timeStart: '13:50',
     timeEnd: '15:20',
     subject: 'Анализ хозяйственной деятельности предприятия',
-    type: 'lecture', // лк
+    type: 'lecture',
     room: '137л',
     teacher: 'Сигитова М. А.',
     teacherRole: 'Доцент, к.э.н.',
@@ -210,7 +198,6 @@ const SCHEDULE_DATA = [
     hasEuk: true
   },
 
-  // --- ПЯТНИЦА ---
   {
     id: 'fri-2',
     day: 'fri',
@@ -218,7 +205,7 @@ const SCHEDULE_DATA = [
     timeStart: '10:10',
     timeEnd: '11:40',
     subject: 'Анализ хозяйственной деятельности предприятия',
-    type: 'practice', // пр
+    type: 'practice',
     room: '301л',
     teacher: 'Мурашова Е. В.',
     teacherRole: 'Доцент, к.э.н.',
@@ -233,7 +220,7 @@ const SCHEDULE_DATA = [
     timeStart: '11:50',
     timeEnd: '13:20',
     subject: 'Стратегический менеджмент',
-    type: 'practice', // пр
+    type: 'practice',
     room: '302л',
     teacher: 'Пенегина И. Т.',
     teacherRole: 'Доцент, к.э.н.',
@@ -248,7 +235,7 @@ const SCHEDULE_DATA = [
     timeStart: '13:50',
     timeEnd: '15:20',
     subject: 'Организация и техника внешнеторговых операций',
-    type: 'practice', // пр
+    type: 'practice',
     room: '329ца',
     teacher: 'Логинова В. А.',
     teacherRole: 'Доцент, к.э.н.',
@@ -263,7 +250,7 @@ const SCHEDULE_DATA = [
     timeStart: '15:30',
     timeEnd: '17:00',
     subject: 'Организация и техника внешнеторговых операций',
-    type: 'practice', // пр
+    type: 'practice',
     room: '329ца',
     teacher: 'Логинова В. А.',
     teacherRole: 'Доцент, к.э.н.',
@@ -272,7 +259,6 @@ const SCHEDULE_DATA = [
     hasEuk: false
   },
 
-  // --- СУББОТА ---
   {
     id: 'sat-2-num',
     day: 'sat',
@@ -280,11 +266,11 @@ const SCHEDULE_DATA = [
     timeStart: '10:10',
     timeEnd: '11:40',
     subject: 'Экономика стран и регионов: азиатско-тихоокеанский регион',
-    type: 'lecture', // лк
+    type: 'lecture',
     room: '229па',
     teacher: 'Мурашова Е. В.',
     teacherRole: 'Доцент, к.э.н.',
-    week: 'numerator', // Ч
+    week: 'numerator',
     subgroup: 'all',
     hasEuk: false
   },
@@ -295,12 +281,12 @@ const SCHEDULE_DATA = [
     timeStart: '11:50',
     timeEnd: '13:20',
     subject: 'Подготовка к международному экзамену IELTS/TOEFL',
-    type: 'practice', // пр
+    type: 'practice',
     room: '359ца',
     teacher: 'Остапенко А. Б.',
     teacherRole: 'Доцент, к.ф.н.',
-    week: 'numerator', // Ч
-    subgroup: '2', // 2 подгруппа
+    week: 'numerator',
+    subgroup: '2',
     hasEuk: true
   },
   {
@@ -310,11 +296,11 @@ const SCHEDULE_DATA = [
     timeStart: '11:50',
     timeEnd: '13:20',
     subject: 'Экономика стран и регионов: азиатско-тихоокеанский регион',
-    type: 'practice', // пр
+    type: 'practice',
     room: '229па',
     teacher: 'Мурашова Е. В.',
     teacherRole: 'Доцент, к.э.н.',
-    week: 'denominator', // З
+    week: 'denominator',
     subgroup: 'all',
     hasEuk: false
   }
@@ -340,10 +326,8 @@ const MONTH_NAMES_SHORT = [
   'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'
 ];
 
-// Anchor date: Monday 21.09.2026 is week "denominator" (Знаменатель)
-const ANCHOR_MONDAY = new Date(2026, 8, 21); // Month 8 is September
+const ANCHOR_MONDAY = new Date(2026, 8, 21);
 
-// Helper: format YYYY-MM-DD
 function toDateStr(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -357,16 +341,14 @@ function parseDateStr(str) {
   return new Date(y, m - 1, d);
 }
 
-// Helper: Get Monday of a given date
 function getMondayOfDate(d) {
   const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const day = date.getDay(); // 0 is Sunday, 1 is Monday...
+  const day = date.getDay();
   const diff = (day === 0 ? -6 : 1 - day);
   date.setDate(date.getDate() + diff);
   return date;
 }
 
-// Calculate week type (Знаменатель or Числитель) based on anchor
 function getWeekTypeForMonday(mondayDate) {
   const oneDay = 24 * 60 * 60 * 1000;
   const m1 = new Date(ANCHOR_MONDAY.getFullYear(), ANCHOR_MONDAY.getMonth(), ANCHOR_MONDAY.getDate(), 12);
@@ -374,12 +356,9 @@ function getWeekTypeForMonday(mondayDate) {
   const diffDays = Math.round((m2 - m1) / oneDay);
   const diffWeeks = Math.round(diffDays / 7);
 
-  // Even week difference => same as anchor (denominator)
-  // Odd week difference => opposite (numerator)
   return (Math.abs(diffWeeks % 2) === 0) ? 'denominator' : 'numerator';
 }
 
-// Initial seed homework
 const DEFAULT_HOMEWORK = [
   {
     id: 'hw-seed-1',
@@ -419,7 +398,6 @@ const DEFAULT_HOMEWORK = [
   }
 ];
 
-// Seed BRS subjects & grades for semester
 const DEFAULT_GRADES = [
   {
     id: 'grade-1',
@@ -479,25 +457,20 @@ const DEFAULT_GRADES = [
   }
 ];
 
-// ==========================================
-// 2. STATE MANAGEMENT
-// ==========================================
 class AppState {
   constructor() {
     const today = new Date();
     this.todayStr = toDateStr(today);
     this.currentMonday = getMondayOfDate(today);
 
-    // Selected day date
     this.selectedDateStr = this.todayStr;
 
-    // Filter modes
-    this.displayMode = localStorage.getItem('aura_schedule_mode') || 'calendar'; // 'calendar' | 'all'
-    this.subgroupFilter = localStorage.getItem('aura_schedule_subgroup') || 'all'; // 'all' | '1' | '2'
-    this.scheduleFormat = localStorage.getItem('aura_schedule_format') || 'day'; // 'day' | 'grid'
+    this.displayMode = localStorage.getItem('aura_schedule_mode') || 'calendar';
+    this.subgroupFilter = localStorage.getItem('aura_schedule_subgroup') || 'all';
+    this.scheduleFormat = localStorage.getItem('aura_schedule_format') || 'day';
     this.theme = localStorage.getItem('aura_schedule_theme') || 'dark';
     this.currentView = 'view-schedule';
-    this.hwFilter = 'active'; // 'active' | 'completed' | 'all'
+    this.hwFilter = 'active';
     this.homework = this.loadHomework();
     this.grades = this.loadGrades();
     this.student = this.loadStudent();
@@ -509,7 +482,7 @@ class AppState {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          // Migration: ensure every homework has `date`
+
           return parsed.map(hw => {
             if (!hw.date) {
               hw.date = hw.dueDate || this.todayStr;
@@ -579,31 +552,26 @@ class AppState {
     }
   }
 
-  // Get week type of currently viewed week
   getCurrentWeekType() {
     return getWeekTypeForMonday(this.currentMonday);
   }
 
-  // Get day key ('mon'..'sun') for selectedDateStr
   getSelectedDayKey() {
     const d = parseDateStr(this.selectedDateStr);
     const map = { 0: 'sun', 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri', 6: 'sat' };
     return map[d.getDay()] || 'mon';
   }
 
-  // Check if viewing current week
   isViewingCurrentWeek() {
     const todayMonday = getMondayOfDate(new Date());
     return toDateStr(this.currentMonday) === toDateStr(todayMonday);
   }
 
-  // Navigate weeks
   goToPrevWeek() {
     const prevM = new Date(this.currentMonday);
     prevM.setDate(prevM.getDate() - 7);
     this.currentMonday = prevM;
 
-    // Shift selected date by -7 days
     const selD = parseDateStr(this.selectedDateStr);
     selD.setDate(selD.getDate() - 7);
     this.selectedDateStr = toDateStr(selD);
@@ -614,7 +582,6 @@ class AppState {
     nextM.setDate(nextM.getDate() + 7);
     this.currentMonday = nextM;
 
-    // Shift selected date by +7 days
     const selD = parseDateStr(this.selectedDateStr);
     selD.setDate(selD.getDate() + 7);
     this.selectedDateStr = toDateStr(selD);
@@ -630,10 +597,6 @@ class AppState {
 
 const state = new AppState();
 
-// ==========================================
-// 3. UI CONTROLLER & RENDERING
-// ==========================================
-
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initNavigation();
@@ -648,17 +611,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderApp();
 
-  // Periodic ticker for current pair and clock
   setInterval(updateLiveTicker, 30000);
   updateLiveTicker();
 
-  // Register service worker if available
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 });
 
-// --- Theme handling ---
 function initTheme() {
   document.documentElement.setAttribute('data-theme', state.theme);
   updateThemeUI();
@@ -688,22 +648,18 @@ function updateThemeUI() {
   }
 }
 
-// --- Navigation & Unified View Switching ---
 function switchView(targetView) {
   if (!targetView) return;
   state.currentView = targetView;
 
-  // Sync active state across sidebar buttons and bottom-nav buttons
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.target === targetView);
   });
 
-  // Switch visible panel
   document.querySelectorAll('.view-panel').forEach(panel => {
     panel.classList.toggle('active', panel.id === targetView);
   });
 
-  // Update desktop page title
   const titleMap = {
     'view-schedule': 'Расписание учебных занятий',
     'view-homework': 'Домашние задания и дедлайны',
@@ -716,7 +672,6 @@ function switchView(targetView) {
     titleEl.textContent = titleMap[targetView];
   }
 
-  // Trigger view-specific rendering
   if (targetView === 'view-schedule') {
     renderScheduleCards();
   } else if (targetView === 'view-homework') {
@@ -738,7 +693,6 @@ function initNavigation() {
   });
 }
 
-// --- Week Navigator (Prev / Next / Today) ---
 function initWeekNavigator() {
   const prevBtn = document.getElementById('prev-week-btn');
   const nextBtn = document.getElementById('next-week-btn');
@@ -761,9 +715,8 @@ function initWeekNavigator() {
   });
 }
 
-// --- Filters (Subgroup, Display Mode & Schedule Format) ---
 function initFilters() {
-  // Subgroup selector
+
   const subgroupSelector = document.getElementById('subgroup-selector');
   if (subgroupSelector) {
     subgroupSelector.querySelectorAll('.sub-btn').forEach(btn => {
@@ -779,7 +732,6 @@ function initFilters() {
     });
   }
 
-  // Display Mode selector ('calendar' vs 'all')
   const modeSelector = document.getElementById('mode-selector');
   if (modeSelector) {
     modeSelector.querySelectorAll('.pill-btn').forEach(btn => {
@@ -795,7 +747,6 @@ function initFilters() {
     });
   }
 
-  // Schedule Format selector ('day' vs 'grid')
   const formatSelector = document.getElementById('format-selector');
   if (formatSelector) {
     formatSelector.querySelectorAll('.pill-btn').forEach(btn => {
@@ -811,7 +762,6 @@ function initFilters() {
     });
   }
 
-  // Homework view filter buttons
   document.querySelectorAll('.hw-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.hw-filter-btn').forEach(b => b.classList.remove('active'));
@@ -822,7 +772,6 @@ function initFilters() {
   });
 }
 
-// --- Main App Render ---
 function renderApp() {
   renderWeekBar();
   renderDayTabs();
@@ -833,13 +782,11 @@ function renderApp() {
   updateStudentProfileUI();
 }
 
-// --- Render Week Navigation Bar ---
 function renderWeekBar() {
   const weekRangeEl = document.getElementById('week-range-text');
   const weekStatusPill = document.getElementById('week-status-pill');
   const todayBtn = document.getElementById('today-jump-btn');
 
-  // Calculate Sunday of current week
   const sunday = new Date(state.currentMonday);
   sunday.setDate(sunday.getDate() + 6);
 
@@ -856,7 +803,6 @@ function renderWeekBar() {
   }
   weekRangeEl.textContent = rangeText;
 
-  // Week type (Числитель vs Знаменатель)
   const weekType = state.getCurrentWeekType();
   if (state.displayMode === 'all') {
     weekStatusPill.textContent = 'Все пары';
@@ -869,12 +815,10 @@ function renderWeekBar() {
     weekStatusPill.className = 'week-status-pill badge-den';
   }
 
-  // Show / Hide "Сегодня" button if looking at other weeks
   const isCurrent = state.isViewingCurrentWeek();
   todayBtn.classList.toggle('hidden', isCurrent);
 }
 
-// --- Render Day Tabs for Currently Viewed Week ---
 function renderDayTabs() {
   const tabsContainer = document.getElementById('day-tabs');
   tabsContainer.innerHTML = '';
@@ -882,13 +826,12 @@ function renderDayTabs() {
   const today = new Date();
   state.todayStr = toDateStr(today);
 
-  // 7 days from Monday to Sunday
   for (let i = 0; i < 7; i++) {
     const tabDate = new Date(state.currentMonday);
     tabDate.setDate(tabDate.getDate() + i);
 
     const dateStr = toDateStr(tabDate);
-    const dayMeta = DAYS_META[i]; // mon, tue, wed, thu, fri, sat, sun
+    const dayMeta = DAYS_META[i];
 
     const tab = document.createElement('button');
     tab.className = 'day-tab';
@@ -901,8 +844,7 @@ function renderDayTabs() {
     if (isToday) tab.classList.add('today');
     if (isSelected) tab.classList.add('active');
 
-    // Check if this specific date has active homework
-    const hasHw = state.homework.some(hw => 
+    const hasHw = state.homework.some(hw =>
       !hw.isCompleted && (hw.date === dateStr || hw.dueDate === dateStr)
     );
 
@@ -927,7 +869,6 @@ function renderDayTabs() {
     tabsContainer.appendChild(tab);
   }
 
-  // Quick HW buttons
   document.getElementById('add-quick-hw-btn').onclick = () => {
     openHomeworkModal({ date: state.selectedDateStr });
   };
@@ -940,7 +881,6 @@ function scrollTabIntoView(tab) {
   tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 }
 
-// --- Render Schedule Cards for Selected Date ---
 function renderScheduleCards() {
   const dayScheduleView = document.getElementById('day-schedule-view');
   const weekGridView = document.getElementById('week-grid-view');
@@ -973,18 +913,15 @@ function renderScheduleCards() {
   const weekType = state.getCurrentWeekType();
   const weekLabel = weekType === 'numerator' ? 'Числитель' : 'Знаменатель';
 
-  // Filter pairs for this day and week type
   const dayPairs = SCHEDULE_DATA.filter(pair => {
     if (pair.day !== selectedDayKey) return false;
 
-    // Week type filter (unless mode is 'all')
     if (state.displayMode !== 'all') {
       if (pair.week !== 'all' && pair.week !== weekType) {
         return false;
       }
     }
 
-    // Subgroup filter
     if (state.subgroupFilter !== 'all') {
       if (pair.subgroup !== 'all' && pair.subgroup !== state.subgroupFilter) {
         return false;
@@ -1019,7 +956,6 @@ function renderScheduleCards() {
     const card = document.createElement('article');
     card.className = 'pair-card';
 
-    // Check if this pair is currently active right now
     const [startH, startM] = pair.timeStart.split(':').map(Number);
     const [endH, endM] = pair.timeEnd.split(':').map(Number);
     const startTimeVal = startH * 60 + startM;
@@ -1030,7 +966,6 @@ function renderScheduleCards() {
       card.classList.add('current-pair');
     }
 
-    // Quiet minimal tags
     const typeBadge = `<span class="badge">${pair.type === 'lecture' ? 'Лекция' : 'Практика'}</span>`;
 
     let weekBadge = '';
@@ -1049,9 +984,8 @@ function renderScheduleCards() {
       subgroupBadge = `<span class="badge">${pair.subgroup} подгруппа</span>`;
     }
 
-    // Pair Homework: matches subject AND (date === selectedDateStr OR dueDate === selectedDateStr)
-    const pairHomework = state.homework.filter(hw => 
-      hw.subject === pair.subject && 
+    const pairHomework = state.homework.filter(hw =>
+      hw.subject === pair.subject &&
       (hw.date === state.selectedDateStr || hw.dueDate === state.selectedDateStr)
     );
 
@@ -1142,7 +1076,7 @@ function renderScheduleCards() {
 }
 
 function attachHomeworkCardEvents(card) {
-  // Add HW button
+
   const addBtn = card.querySelector('.btn-card-add-hw');
   if (addBtn) {
     addBtn.addEventListener('click', (e) => {
@@ -1154,7 +1088,6 @@ function attachHomeworkCardEvents(card) {
     });
   }
 
-  // Checkbox toggle
   card.querySelectorAll('.hw-checkbox').forEach(chk => {
     chk.addEventListener('change', (e) => {
       e.stopPropagation();
@@ -1164,7 +1097,6 @@ function attachHomeworkCardEvents(card) {
     });
   });
 
-  // Edit HW click
   card.querySelectorAll('.card-hw-body').forEach(body => {
     body.addEventListener('click', () => {
       const itemEl = body.closest('.card-hw-item');
@@ -1176,7 +1108,6 @@ function attachHomeworkCardEvents(card) {
     });
   });
 
-  // Delete HW click
   card.querySelectorAll('.card-hw-delete-btn').forEach(delBtn => {
     delBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1187,7 +1118,6 @@ function attachHomeworkCardEvents(card) {
   });
 }
 
-// --- Render Full Week Timetable Grid for PC / Desktop ---
 function renderWeekGridView() {
   const container = document.getElementById('week-grid-view');
   if (!container) return;
@@ -1204,7 +1134,6 @@ function renderWeekGridView() {
     const dayDateStr = toDateStr(dayDate);
     const isToday = (dayDateStr === state.todayStr);
 
-    // Filter pairs for this day
     const dayPairs = SCHEDULE_DATA.filter(pair => {
       if (pair.day !== dayKey) return false;
       if (state.displayMode !== 'all') {
@@ -1259,7 +1188,6 @@ function renderWeekGridView() {
     </div>
   `;
 
-  // Clicking any chip opens day view for that date
   container.querySelectorAll('.grid-pair-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       const dateStr = chip.dataset.date;
@@ -1277,14 +1205,13 @@ function renderWeekGridView() {
   });
 }
 
-// --- Toggle Homework Status ---
 function toggleHomeworkStatus(hwId, isCompleted) {
   const hw = state.homework.find(h => h.id === hwId);
   if (hw) {
     hw.isCompleted = isCompleted;
     state.saveHomework();
     updateHomeworkBadges();
-    renderDayTabs(); // refresh dots on day tabs
+    renderDayTabs();
     if (state.currentView === 'view-schedule') {
       renderScheduleCards();
     } else if (state.currentView === 'view-homework') {
@@ -1294,7 +1221,6 @@ function toggleHomeworkStatus(hwId, isCompleted) {
   }
 }
 
-// --- Delete Homework ---
 function deleteHomework(hwId) {
   state.homework = state.homework.filter(h => h.id !== hwId);
   state.saveHomework();
@@ -1308,7 +1234,6 @@ function deleteHomework(hwId) {
   showToast('Задание удалено');
 }
 
-// --- Render View 2: All Homework View ---
 function renderAllHomeworkView() {
   const listContainer = document.getElementById('all-homework-list');
   const activeCountEl = document.getElementById('hw-active-count');
@@ -1331,7 +1256,6 @@ function renderAllHomeworkView() {
     displayTasks = state.homework;
   }
 
-  // Sort: active first, then urgent, then by date/dueDate
   displayTasks.sort((a, b) => {
     if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
     if (a.isUrgent !== b.isUrgent) return a.isUrgent ? -1 : 1;
@@ -1398,7 +1322,6 @@ function renderAllHomeworkView() {
   });
 }
 
-// --- Render Grades & BRS Tracker (Балльно-рейтинговая система ТОГУ) ---
 function renderGradesView() {
   const container = document.getElementById('grades-cards-list');
   const avgValEl = document.getElementById('brs-avg-val');
@@ -1409,7 +1332,6 @@ function renderGradesView() {
 
   if (!container || !state.grades) return;
 
-  // Calculate metrics
   let totalPoints = 0;
   let minPoints = 100;
   let countBelow60 = 0;
@@ -1455,7 +1377,6 @@ function renderGradesView() {
     }
   }
 
-  // Render subject cards
   container.innerHTML = state.grades.map(g => {
     const pts = Math.min(100, Math.max(0, Number(g.points) || 0));
     let tierClass = 'tier-2';
@@ -1500,7 +1421,6 @@ function renderGradesView() {
     `;
   }).join('');
 
-  // Event listeners for score adjusters and notes
   container.querySelectorAll('.grade-card').forEach(card => {
     const id = card.dataset.gradeId;
     const gradeObj = state.grades.find(item => item.id === id);
@@ -1534,7 +1454,6 @@ function renderGradesView() {
   });
 }
 
-// --- Homework Modal / Bottom Sheet ---
 function initHomeworkModal() {
   const backdrop = document.getElementById('hw-modal-backdrop');
   const closeBtn = document.getElementById('hw-modal-close');
@@ -1546,7 +1465,6 @@ function initHomeworkModal() {
     if (e.target === backdrop) closeHomeworkModal();
   });
 
-  // Preset chips (Quick deadlines)
   document.querySelectorAll('.preset-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
@@ -1561,7 +1479,7 @@ function initHomeworkModal() {
         dueDateInput.value = toDateStr(baseDate);
       } else if (preset === 'next-pair') {
         const nextDate = new Date(baseDate);
-        nextDate.setDate(nextDate.getDate() + 7); // next week's pair
+        nextDate.setDate(nextDate.getDate() + 7);
         dueDateInput.value = toDateStr(nextDate);
       } else if (preset === 'tomorrow') {
         const tomDate = new Date(baseDate);
@@ -1571,7 +1489,6 @@ function initHomeworkModal() {
     });
   });
 
-  // Form Submit
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const editId = document.getElementById('hw-edit-id').value;
@@ -1585,7 +1502,7 @@ function initHomeworkModal() {
     if (!text) return;
 
     if (editId) {
-      // Update existing
+
       const existing = state.homework.find(h => h.id === editId);
       if (existing) {
         existing.subject = subject;
@@ -1597,7 +1514,7 @@ function initHomeworkModal() {
       }
       showToast('Задание обновлено');
     } else {
-      // Create new
+
       const newHw = {
         id: 'hw-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
         subject,
@@ -1623,7 +1540,6 @@ function initHomeworkModal() {
     }
   });
 
-  // Delete button
   deleteBtn.addEventListener('click', () => {
     const editId = document.getElementById('hw-edit-id').value;
     if (editId) {
@@ -1648,7 +1564,7 @@ function openHomeworkModal(presetData = {}) {
   populateSubjectDropdown();
 
   if (presetData.id) {
-    // EDIT MODE
+
     modalTitle.textContent = 'Редактировать домашку';
     editIdInput.value = presetData.id;
     subjectSelect.value = presetData.subject;
@@ -1659,7 +1575,7 @@ function openHomeworkModal(presetData = {}) {
     linkInput.value = presetData.link || '';
     deleteBtn.classList.remove('hidden');
   } else {
-    // CREATE MODE
+
     modalTitle.textContent = 'Записать домашку к дате';
     editIdInput.value = '';
     if (presetData.subject) {
@@ -1669,7 +1585,6 @@ function openHomeworkModal(presetData = {}) {
     dateInput.value = targetDate;
     textInput.value = '';
 
-    // Default deadline: same date or next week
     dueDateInput.value = targetDate;
     urgentCheckbox.checked = false;
     linkInput.value = '';
@@ -1686,7 +1601,6 @@ function closeHomeworkModal() {
   document.getElementById('hw-modal-backdrop').classList.remove('open');
 }
 
-// Populate Subject Dropdown
 function populateSubjectDropdown() {
   const select = document.getElementById('hw-subject-select');
   if (select.children.length > 0) return;
@@ -1695,7 +1609,6 @@ function populateSubjectDropdown() {
   select.innerHTML = subjects.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
 }
 
-// Update Badges on Bottom Nav & Desktop Sidebar
 function updateHomeworkBadges() {
   const badgeTotal = document.getElementById('badge-hw-total');
   const sidebarBadge = document.getElementById('sidebar-badge-hw');
@@ -1720,7 +1633,6 @@ function updateHomeworkBadges() {
   }
 }
 
-// --- Dynamic Island Live Ticker ---
 function updateLiveTicker() {
   const banner = document.getElementById('live-banner');
   const statusLabel = document.getElementById('live-status-label');
@@ -1773,7 +1685,6 @@ function updateLiveTicker() {
   }
 }
 
-// --- Touch Gestures (Swipe between days and weeks on mobile) ---
 function initTouchGestures() {
   let touchStartX = 0;
   let touchStartY = 0;
@@ -1788,13 +1699,12 @@ function initTouchGestures() {
     const diffX = e.changedTouches[0].screenX - touchStartX;
     const diffY = e.changedTouches[0].screenY - touchStartY;
 
-    // Detect horizontal swipe if larger than 60px and more horizontal than vertical
     if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
       if (diffX < 0) {
-        // Swipe left => next day
+
         advanceDay(1);
       } else {
-        // Swipe right => prev day
+
         advanceDay(-1);
       }
     }
@@ -1806,14 +1716,12 @@ function advanceDay(offset) {
   cur.setDate(cur.getDate() + offset);
   state.selectedDateStr = toDateStr(cur);
 
-  // If outside current week, shift currentMonday
   const newMonday = getMondayOfDate(cur);
   state.currentMonday = newMonday;
 
   renderApp();
 }
 
-// --- Global Search ---
 function initSearch() {
   const searchInput = document.getElementById('global-search-input');
   const clearBtn = document.getElementById('clear-search-btn');
@@ -1860,7 +1768,7 @@ function renderSearchSuggestions(container) {
 }
 
 function renderSearchResults(query, container) {
-  const matchedPairs = SCHEDULE_DATA.filter(p => 
+  const matchedPairs = SCHEDULE_DATA.filter(p =>
     p.subject.toLowerCase().includes(query) ||
     p.teacher.toLowerCase().includes(query) ||
     p.room.toLowerCase().includes(query)
@@ -1936,7 +1844,6 @@ function renderSearchResults(query, container) {
   }
 }
 
-// --- Settings & Profile & Backup ---
 function initSettings() {
   const subgroupSelect = document.getElementById('setting-default-subgroup');
   if (subgroupSelect) {
@@ -1956,7 +1863,6 @@ function initSettings() {
     });
   }
 
-  // Profile inputs & Save
   const saveProfileBtn = document.getElementById('save-profile-btn');
   if (saveProfileBtn) {
     saveProfileBtn.addEventListener('click', () => {
@@ -1980,7 +1886,6 @@ function initSettings() {
     });
   }
 
-  // Add custom grade subject button
   const addGradeBtn = document.getElementById('add-custom-grade-btn');
   if (addGradeBtn) {
     addGradeBtn.addEventListener('click', () => {
@@ -2001,7 +1906,6 @@ function initSettings() {
     });
   }
 
-  // Export JSON (Full Backup)
   const exportBtn = document.getElementById('export-backup-btn');
   if (exportBtn) {
     exportBtn.addEventListener('click', () => {
@@ -2022,7 +1926,6 @@ function initSettings() {
     });
   }
 
-  // Import JSON
   const importInput = document.getElementById('import-backup-file');
   if (importInput) {
     importInput.addEventListener('change', (e) => {
@@ -2034,11 +1937,11 @@ function initSettings() {
         try {
           const imported = JSON.parse(event.target.result);
           if (Array.isArray(imported)) {
-            // Legacy homework-only backup
+
             state.homework = imported;
             state.saveHomework();
           } else if (imported && typeof imported === 'object') {
-            // Full diary backup
+
             if (Array.isArray(imported.homework)) {
               state.homework = imported.homework;
               state.saveHomework();
@@ -2062,7 +1965,6 @@ function initSettings() {
     });
   }
 
-  // Reset to default
   const resetBtn = document.getElementById('reset-data-btn');
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
@@ -2078,7 +1980,6 @@ function initSettings() {
   }
 }
 
-// --- Student Profile UI Sync ---
 function updateStudentProfileUI() {
   if (!state.student) return;
   const s = state.student;
@@ -2114,7 +2015,6 @@ function updateStudentProfileUI() {
   if (setStudentId && setStudentId !== document.activeElement) setStudentId.value = s.idNum || '';
 }
 
-// --- Quick Export Tools (Print & iCalendar) ---
 function initQuickTools() {
   const printBtn = document.getElementById('quick-print-btn');
   if (printBtn) {
@@ -2175,10 +2075,9 @@ function exportICalendar() {
   showToast('Календарь iCal (.ics) скачан');
 }
 
-// --- Desktop Keyboard Shortcuts ---
 function initDesktopKeyboardShortcuts() {
   document.addEventListener('keydown', (e) => {
-    // Ignore when typing inside input / textarea / select
+
     const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
     if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
@@ -2201,7 +2100,6 @@ function initDesktopKeyboardShortcuts() {
   });
 }
 
-// --- Toast Notification ---
 let toastTimeout = null;
 function showToast(msg) {
   const toast = document.getElementById('toast');
@@ -2216,7 +2114,6 @@ function showToast(msg) {
   }, 2600);
 }
 
-// --- Utilities ---
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)

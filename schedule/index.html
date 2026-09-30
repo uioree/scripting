@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>ТОГУ Дневник · Электронное расписание и успеваемость</title>
-  
-  <!-- PWA & Mobile Meta -->
+
   <meta name="theme-color" content="#0a0a0c">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -14,16 +13,15 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22 fill=%22none%22><rect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%2318181b%22/><path d=%22M8 11h16M8 16h16M8 21h10%22 stroke=%22%23f4f4f5%22 stroke-width=%222.2%22 stroke-linecap=%22round%22/></svg>">
 
-  <!-- Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app-wrapper">
-    <!-- DESKTOP SIDEBAR (Visible on PC & Tablets >= 768px) -->
+
     <aside class="desktop-sidebar" id="desktop-sidebar">
       <div class="sidebar-brand">
         <div class="sidebar-logo-icon">
@@ -40,7 +38,6 @@
         </div>
       </div>
 
-      <!-- Student Profile Card in Sidebar -->
       <div class="sidebar-student-card">
         <div class="sidebar-student-avatar" id="sidebar-avatar-initials">ДФ</div>
         <div class="sidebar-student-info">
@@ -53,7 +50,6 @@
         </div>
       </div>
 
-      <!-- Main Navigation Menu -->
       <nav class="sidebar-nav">
         <button class="nav-item active" data-target="view-schedule" id="sidebar-btn-schedule">
           <div class="nav-icon-wrapper">
@@ -115,7 +111,6 @@
         </button>
       </nav>
 
-      <!-- Desktop Quick Actions -->
       <div class="sidebar-quick-tools">
         <button id="quick-print-btn" class="sidebar-tool-btn" title="Распечатать расписание на листе А4">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15">
@@ -135,7 +130,6 @@
         </button>
       </div>
 
-      <!-- Sidebar Footer -->
       <div class="sidebar-footer">
         <div class="sidebar-footer-links">
           <a href="https://portal.togudv.ru" target="_blank" rel="noopener" class="sidebar-link">Портал ТОГУ ↗</a>
@@ -149,9 +143,8 @@
       </div>
     </aside>
 
-    <!-- MAIN INTERFACE AREA -->
     <div class="app-main-area">
-      <!-- Universal App Header / Topbar -->
+
       <header class="app-header">
         <div class="header-top">
           <div class="brand-block mobile-only">
@@ -178,7 +171,6 @@
           </div>
         </div>
 
-        <!-- Week Navigation Bar (Swipe & Browse Weeks) -->
         <div class="week-nav-bar">
           <button id="prev-week-btn" class="week-nav-btn" aria-label="Предыдущая неделя" title="Предыдущая неделя">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -201,7 +193,6 @@
           </button>
         </div>
 
-        <!-- Secondary Filters & Desktop Format Toggle -->
         <div class="filter-controls">
           <div class="subgroup-segmented" id="subgroup-selector">
             <button class="sub-btn active" data-sub="all" title="Показывать все подгруппы">Все подгруппы</button>
@@ -215,7 +206,6 @@
               <button class="pill-btn" data-mode="all" id="mode-all-btn">Все пары</button>
             </div>
 
-            <!-- Format Toggle (Day vs Full Week Grid) -->
             <div class="pill-segmented" id="format-selector">
               <button class="pill-btn active" data-format="day" id="format-day-btn" title="Просмотр по выбранному дню">По дням</button>
               <button class="pill-btn" data-format="grid" id="format-grid-btn" title="Сетка расписания на всю неделю">Сетка недели</button>
@@ -223,19 +213,17 @@
           </div>
         </div>
 
-        <!-- Day of the Week Horizontal Bar (Active in Day Mode) -->
         <div class="day-tabs-scroll" id="day-tabs-container">
           <div class="day-tabs" id="day-tabs">
-            <!-- Filled dynamically by JS with specific dates -->
+
           </div>
         </div>
       </header>
 
-      <!-- Main Views Container -->
       <main class="main-content">
-        <!-- VIEW 1: Schedule View (Day Focus & Week Grid) -->
+
         <section id="view-schedule" class="view-panel active">
-          <!-- Subview 1A: Day Schedule -->
+
           <div id="day-schedule-view" class="day-schedule-view">
             <div class="day-overview-header">
               <div>
@@ -252,7 +240,7 @@
             </div>
 
             <div id="schedule-cards" class="schedule-cards-list">
-              <!-- Rendered dynamically -->
+
             </div>
 
             <div id="empty-day-state" class="empty-state hidden">
@@ -269,13 +257,11 @@
             </div>
           </div>
 
-          <!-- Subview 1B: Week Timetable Grid (Full Week Table for Desktop) -->
           <div id="week-grid-view" class="week-grid-view hidden">
-            <!-- Dynamically rendered 6-column timetable grid -->
+
           </div>
         </section>
 
-        <!-- VIEW 2: All Homework Planner -->
         <section id="view-homework" class="view-panel">
           <div class="section-top">
             <div>
@@ -298,11 +284,10 @@
           </div>
 
           <div id="all-homework-list" class="homework-cards-list">
-            <!-- Rendered dynamically -->
+
           </div>
         </section>
 
-        <!-- VIEW 3: Grades & BRS Tracker (Балльно-рейтинговая система) -->
         <section id="view-grades" class="view-panel">
           <div class="section-top">
             <div>
@@ -314,7 +299,6 @@
             </button>
           </div>
 
-          <!-- BRS Summary KPIs -->
           <div class="brs-stats-grid">
             <div class="brs-stat-card">
               <span class="brs-stat-label">Средний балл БРС</span>
@@ -333,7 +317,6 @@
             </div>
           </div>
 
-          <!-- Grade Thresholds Guide -->
           <div class="brs-legend-bar">
             <span class="legend-pill tier-5">85–100: Отлично / Автомат</span>
             <span class="legend-pill tier-4">73–84: Хорошо</span>
@@ -341,13 +324,11 @@
             <span class="legend-pill tier-2">&lt; 60: Недопуск</span>
           </div>
 
-          <!-- Grades Cards List -->
           <div id="grades-cards-list" class="grades-cards-list">
-            <!-- Rendered dynamically -->
+
           </div>
         </section>
 
-        <!-- VIEW 4: Search & Subjects Directory -->
         <section id="view-search" class="view-panel">
           <div class="search-box">
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -359,15 +340,13 @@
           </div>
 
           <div id="search-results" class="search-results-list">
-            <!-- Rendered dynamically -->
+
           </div>
         </section>
 
-        <!-- VIEW 5: Settings & University Profile -->
         <section id="view-settings" class="view-panel">
           <h2 class="section-title">Профиль и интеграция с вузом</h2>
-          
-          <!-- Editable Student Profile Card -->
+
           <div class="settings-card">
             <h3 class="card-subtitle">Данные студента (для расписания)</h3>
             <div class="settings-form-grid">
@@ -397,7 +376,6 @@
             </button>
           </div>
 
-          <!-- University Deployment Pitch -->
           <div class="settings-card highlight-card">
             <h3 class="card-subtitle">Готовность к внедрению в ТОГУ</h3>
             <p class="settings-hint">Этот электронный дневник разработан как независимое PWA-приложение для Тихоокеанского государственного университета. Поддерживает офлайн-режим, расчет числителя/знаменателя, баллы БРС и синхронизацию с порталом.</p>
@@ -409,7 +387,6 @@
             </div>
           </div>
 
-          <!-- Backup & Data -->
           <div class="settings-card">
             <h3 class="card-subtitle">Данные и резервные копии</h3>
             <p class="settings-hint mb-3">Все задания, баллы БРС и настройки хранятся в памяти браузера. Вы можете сохранить копию на компьютер или перенести на телефон.</p>
@@ -437,7 +414,6 @@
             </div>
           </div>
 
-          <!-- Campus Legend -->
           <div class="settings-card">
             <h3 class="card-subtitle">Обозначения корпусов ТОГУ</h3>
             <ul class="legend-list">
@@ -451,7 +427,6 @@
         </section>
       </main>
 
-      <!-- Bottom Navigation Bar for Mobile (< 768px) -->
       <nav class="bottom-nav">
         <button class="nav-item active" data-target="view-schedule" id="nav-btn-schedule">
           <div class="nav-icon-wrapper">
@@ -510,11 +485,10 @@
     </div>
   </div>
 
-  <!-- Bottom Sheet Modal for Adding / Editing Homework -->
   <div id="hw-modal-backdrop" class="modal-backdrop">
     <div class="bottom-sheet" id="hw-bottom-sheet">
       <div class="sheet-drag-handle"></div>
-      
+
       <div class="sheet-header">
         <h3 id="hw-modal-title" class="sheet-title">Записать задание</h3>
         <button id="hw-modal-close" class="close-sheet-btn" aria-label="Закрыть">✕</button>
@@ -525,27 +499,23 @@
         <input type="hidden" id="hw-target-day" value="">
         <input type="hidden" id="hw-target-date" value="">
 
-        <!-- Select Subject -->
         <div class="form-group">
           <label for="hw-subject-select" class="form-label">Предмет</label>
           <select id="hw-subject-select" class="form-select" required>
-            <!-- Options populated dynamically -->
+
           </select>
         </div>
 
-        <!-- Class Date (Exact Calendar Date) -->
         <div class="form-group">
           <label for="hw-date-input" class="form-label">Дата занятия / пары</label>
           <input type="date" id="hw-date-input" class="form-input" required>
         </div>
 
-        <!-- Task Content -->
         <div class="form-group">
           <label for="hw-text-input" class="form-label">Что нужно сделать?</label>
           <textarea id="hw-text-input" class="form-textarea" rows="3" placeholder="Например: решить задачи 3-7 со слайда 12, подготовить доклад по теме ВТО..." required></textarea>
         </div>
 
-        <!-- Deadline / Due Date & Quick Presets -->
         <div class="form-group">
           <label for="hw-due-date" class="form-label">Дедлайн (сдать к какой дате)</label>
           <div class="quick-preset-chips">
@@ -556,7 +526,6 @@
           <input type="date" id="hw-due-date" class="form-input" required>
         </div>
 
-        <!-- Priority & Urgent Flag -->
         <div class="form-row-checkbox">
           <label class="custom-checkbox-container">
             <input type="checkbox" id="hw-is-urgent">
@@ -565,13 +534,11 @@
           </label>
         </div>
 
-        <!-- Optional link (e.g. to ЭУК or cloud disk) -->
         <div class="form-group">
           <label for="hw-link-input" class="form-label">Ссылка на материалы или ЭУК (опционально)</label>
           <input type="url" id="hw-link-input" class="form-input" placeholder="https://portal.togudv.ru/...">
         </div>
 
-        <!-- Actions -->
         <div class="sheet-actions">
           <button type="button" id="hw-delete-btn" class="btn btn-danger hidden">Удалить</button>
           <button type="submit" id="hw-submit-btn" class="btn btn-primary flex-1">Сохранить</button>
@@ -580,7 +547,6 @@
     </div>
   </div>
 
-  <!-- Notification Toast -->
   <div id="toast" class="toast hidden"></div>
 
   <script src="app.js"></script>
