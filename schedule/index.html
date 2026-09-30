@@ -520,7 +520,7 @@
                 📋 Скопировать код синхронизации группы
               </button>
               <button id="import-group-code-btn" class="btn btn-secondary btn-sm">
-                📥 Вставить код синхронизации от старосты / преподавателя
+                📥 Вставить код синхронизации от преподавателя или группы
               </button>
             </div>
           </div>
@@ -707,7 +707,7 @@
     <div class="bottom-sheet auth-sheet">
       <div class="sheet-drag-handle"></div>
       <div class="sheet-header">
-        <h3 class="sheet-title">Личный кабинет и аккаунты ТОГУ</h3>
+        <h3 class="sheet-title" id="auth-sheet-title">Личный профиль и доступ</h3>
         <button id="auth-modal-close" class="close-sheet-btn" aria-label="Закрыть">✕</button>
       </div>
 
@@ -717,104 +717,72 @@
           <div class="auth-profile-name" id="auth-profile-name">Студент</div>
           <div class="auth-profile-meta" id="auth-profile-meta">Роль: Студент · Группа МБИ(б)-31</div>
         </div>
+        <button type="button" id="auth-btn-logout-teacher" class="btn btn-secondary btn-sm hidden">
+          Выйти в режим студента
+        </button>
       </div>
 
       <div class="auth-segmented-nav">
-        <button type="button" class="auth-seg-btn active" data-authtab="quick-switch" id="authtab-btn-quick">Быстрый вход</button>
-        <button type="button" class="auth-seg-btn" data-authtab="register" id="authtab-btn-register">Регистрация / Вход</button>
+        <button type="button" class="auth-seg-btn active" data-authtab="student" id="authtab-btn-student">🎓 Профиль студента</button>
+        <button type="button" class="auth-seg-btn" data-authtab="teacher" id="authtab-btn-teacher">🔒 Вход для преподавателя</button>
       </div>
 
-      <div id="authtab-quick-switch" class="auth-tab-panel active">
-        <div class="auth-section-label">Выберите готовый аккаунт для мгновенного входа:</div>
-        <div class="quick-accounts-list">
-          <button type="button" class="account-choice-btn" data-quick-user="student-mbi">
-            <div class="account-choice-avatar student-avatar">🎓</div>
-            <div class="account-choice-info">
-              <span class="account-choice-title">Студент группы</span>
-              <span class="account-choice-sub">Группа МБИ(б)-31 · Дневник, БРС, просмотр ДЗ</span>
-            </div>
-            <span class="account-choice-badge">Студент</span>
-          </button>
+      <!-- Tab 1: Student Profile -->
+      <div id="authtab-student" class="auth-tab-panel active">
+        <form id="auth-student-form" class="sheet-form">
+          <div class="form-group">
+            <label for="auth-student-name" class="form-label">Ваше имя или ФИО</label>
+            <input type="text" id="auth-student-name" class="form-input" placeholder="Например: Алексей Смирнов" required>
+          </div>
+          <div class="form-group">
+            <label for="auth-student-group" class="form-label">Академическая группа</label>
+            <input type="text" id="auth-student-group" class="form-input" value="МБИ(б)-31" required>
+          </div>
+          <div class="form-group">
+            <label for="auth-student-id" class="form-label">Номер студенческого / зачетки (необязательно)</label>
+            <input type="text" id="auth-student-id" class="form-input" placeholder="Например: 2023100101">
+          </div>
+          <div class="sheet-actions mt-3">
+            <button type="submit" class="btn btn-primary flex-1">Сохранить профиль студента</button>
+          </div>
+        </form>
+      </div>
 
-          <button type="button" class="account-choice-btn" data-quick-user="starosta">
-            <div class="account-choice-avatar starosta-avatar">⭐</div>
-            <div class="account-choice-info">
-              <span class="account-choice-title">Староста группы</span>
-              <span class="account-choice-sub">Группа МБИ(б)-31 · Управление объявлениями</span>
-            </div>
-            <span class="account-choice-badge">Староста</span>
-          </button>
-
-          <button type="button" class="account-choice-btn" data-quick-user="teacher-murashova">
-            <div class="account-choice-avatar teacher-avatar">👨‍🏫</div>
-            <div class="account-choice-info">
-              <span class="account-choice-title">Мурашова Е. В.</span>
-              <span class="account-choice-sub">Доцент, к.э.н. · Анализ хоз. деятельности, МЭО</span>
-            </div>
-            <span class="account-choice-badge teacher-badge">Преподаватель</span>
-          </button>
-
-          <button type="button" class="account-choice-btn" data-quick-user="teacher-loginova">
-            <div class="account-choice-avatar teacher-avatar">👩‍🏫</div>
-            <div class="account-choice-info">
-              <span class="account-choice-title">Логинова В. А.</span>
-              <span class="account-choice-sub">Доцент, к.э.н. · Внешнеторговые операции</span>
-            </div>
-            <span class="account-choice-badge teacher-badge">Преподаватель</span>
-          </button>
-
-          <button type="button" class="account-choice-btn" data-quick-user="teacher-penegina">
-            <div class="account-choice-avatar teacher-avatar">👩‍🏫</div>
-            <div class="account-choice-info">
-              <span class="account-choice-title">Пенегина И. Т.</span>
-              <span class="account-choice-sub">Доцент, к.э.н. · Стратегический менеджмент</span>
-            </div>
-            <span class="account-choice-badge teacher-badge">Преподаватель</span>
-          </button>
-
-          <button type="button" class="account-choice-btn" data-quick-user="teacher-ostapenko">
-            <div class="account-choice-avatar teacher-avatar">👨‍🏫</div>
-            <div class="account-choice-info">
-              <span class="account-choice-title">Остапенко А. Б.</span>
-              <span class="account-choice-sub">Доцент, к.ф.н. · Подготовка к IELTS/TOEFL</span>
-            </div>
-            <span class="account-choice-badge teacher-badge">Преподаватель</span>
-          </button>
+      <!-- Tab 2: Teacher Protected Login -->
+      <div id="authtab-teacher" class="auth-tab-panel hidden">
+        <div class="auth-section-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+          <span>🔒</span> Закрытый вход для преподавателей кафедры ТОГУ
         </div>
-      </div>
-
-      <div id="authtab-register" class="auth-tab-panel hidden">
-        <form id="auth-custom-form" class="sheet-form">
+        <form id="auth-teacher-form" class="sheet-form">
           <div class="form-group">
-            <label class="form-label">Тип учетной записи</label>
-            <div class="role-selector-row">
-              <button type="button" class="role-select-btn active" data-role="student" id="role-select-student">🎓 Студент</button>
-              <button type="button" class="role-select-btn" data-role="teacher" id="role-select-teacher">👨‍🏫 Преподаватель</button>
-            </div>
+            <label for="auth-teacher-select" class="form-label">Преподаватель кафедры</label>
+            <select id="auth-teacher-select" class="form-select">
+              <option value="Мурашова Е. В.">Мурашова Е. В. (Кафедра «Экономика и менеджмент»)</option>
+              <option value="Логинова В. А.">Логинова В. А. (Кафедра «Менеджмент и ВЭД»)</option>
+              <option value="Пенегина И. Т.">Пенегина И. Т. (Кафедра «Менеджмент и ВЭД»)</option>
+              <option value="Остапенко А. Б.">Остапенко А. Б. (Кафедра «Иностранные языки»)</option>
+              <option value="custom">Другой преподаватель...</option>
+            </select>
+          </div>
+
+          <div class="form-group hidden" id="auth-teacher-custom-name-group">
+            <label for="auth-teacher-custom-name" class="form-label">ФИО преподавателя</label>
+            <input type="text" id="auth-teacher-custom-name" class="form-input" placeholder="Фамилия Имя Отчество">
+          </div>
+
+          <div class="form-group hidden" id="auth-teacher-custom-dept-group">
+            <label for="auth-teacher-custom-dept" class="form-label">Кафедра</label>
+            <input type="text" id="auth-teacher-custom-dept" class="form-input" placeholder="Например: Кафедра высшей математики">
           </div>
 
           <div class="form-group">
-            <label for="auth-name-input" class="form-label">ФИО</label>
-            <input type="text" id="auth-name-input" class="form-input" placeholder="Например: Иванов Иван Иванович" required>
-          </div>
-
-          <div class="form-group" id="auth-group-field">
-            <label for="auth-group-input" class="form-label">Академическая группа</label>
-            <input type="text" id="auth-group-input" class="form-input" value="МБИ(б)-31" placeholder="Например: МБИ(б)-31">
-          </div>
-
-          <div class="form-group hidden" id="auth-dept-field">
-            <label for="auth-dept-input" class="form-label">Кафедра</label>
-            <input type="text" id="auth-dept-input" class="form-input" placeholder="Например: Кафедра высшей математики">
-          </div>
-
-          <div class="form-group hidden" id="auth-subject-field">
-            <label for="auth-subject-input" class="form-label">Преподаваемые дисциплины (через запятую)</label>
-            <input type="text" id="auth-subject-input" class="form-input" placeholder="Например: Стратегический менеджмент">
+            <label for="auth-teacher-password" class="form-label">Пароль кафедры ТОГУ</label>
+            <input type="password" id="auth-teacher-password" class="form-input" placeholder="Введите пароль доступа кафедры" required autocomplete="current-password">
+            <p class="settings-hint" style="margin-top: 4px; font-size: 11px;">Требуется для подтверждения прав преподавателя (пароль: togu2026).</p>
           </div>
 
           <div class="sheet-actions mt-3">
-            <button type="submit" class="btn btn-primary flex-1">Войти в дневник</button>
+            <button type="submit" class="btn btn-primary flex-1">Войти как преподаватель</button>
           </div>
         </form>
       </div>

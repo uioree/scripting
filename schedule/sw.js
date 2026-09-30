@@ -1,4 +1,4 @@
-const CACHE_NAME = 'togu-diary-v3';
+const CACHE_NAME = 'togu-diary-v4';
 const ASSETS = [
   './',
   './index.html',

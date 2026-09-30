@@ -2684,12 +2684,6 @@ body {
   border: 1px solid rgba(168, 85, 247, 0.3);
 }
 
-.role-starosta {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
 .teacher-announcements-banner {
   margin-bottom: 16px;
   display: flex;

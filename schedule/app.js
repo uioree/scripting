@@ -458,26 +458,10 @@ const DEFAULT_GRADES = [
 ];
 
 
-const DEFAULT_USERS = {
-  'student-mbi': {
-    id: 'u_student_1',
-    role: 'student',
-    name: 'Студент',
-    group: 'МБИ(б)-31',
-    course: '3 курс',
-    idNum: ''
-  },
-  'starosta': {
-    id: 'u_starosta_1',
-    role: 'starosta',
-    name: 'Даниил Кузнецов (Староста)',
-    group: 'МБИ(б)-31',
-    course: '3 курс',
-    idNum: '2023100801'
-  },
-  'teacher-murashova': {
-    id: 'u_teacher_1',
-    role: 'teacher',
+const TEACHER_ACCESS_CODE = 'togu2026';
+
+const KNOWN_TEACHERS = [
+  {
     name: 'Мурашова Е. В.',
     roleTitle: 'Доцент, к.э.н.',
     dept: 'Кафедра «Экономика и менеджмент»',
@@ -487,9 +471,7 @@ const DEFAULT_USERS = {
       'Экономика стран и регионов: азиатско-тихоокеанский регион'
     ]
   },
-  'teacher-loginova': {
-    id: 'u_teacher_2',
-    role: 'teacher',
+  {
     name: 'Логинова В. А.',
     roleTitle: 'Доцент, к.э.н.',
     dept: 'Кафедра «Менеджмент и внешнеэкономическая деятельность»',
@@ -497,9 +479,7 @@ const DEFAULT_USERS = {
       'Организация и техника внешнеторговых операций'
     ]
   },
-  'teacher-penegina': {
-    id: 'u_teacher_3',
-    role: 'teacher',
+  {
     name: 'Пенегина И. Т.',
     roleTitle: 'Доцент, к.э.н.',
     dept: 'Кафедра «Менеджмент и внешнеэкономическая деятельность»',
@@ -507,15 +487,24 @@ const DEFAULT_USERS = {
       'Стратегический менеджмент'
     ]
   },
-  'teacher-ostapenko': {
-    id: 'u_teacher_4',
-    role: 'teacher',
+  {
     name: 'Остапенко А. Б.',
     roleTitle: 'Доцент, к.ф.н.',
     dept: 'Кафедра «Иностранные языки»',
     subjects: [
       'Подготовка к международному экзамену IELTS/TOEFL'
     ]
+  }
+];
+
+const DEFAULT_USERS = {
+  'student-mbi': {
+    id: 'u_student_1',
+    role: 'student',
+    name: 'Студент',
+    group: 'МБИ(б)-31',
+    course: '3 курс',
+    idNum: ''
   }
 };
 
@@ -583,7 +572,7 @@ const DEFAULT_ANNOUNCEMENTS = [
     id: 'ann-seed-1',
     group: 'МБИ(б)-31',
     author: 'Мурашова Е. В. (Кафедра ЭиМ)',
-    text: 'Консультация перед защитой расчетно-графической работы пройдет в четверг в 15:30 в ауд. 301л. Явка старосте обязательна.',
+    text: 'Консультация перед защитой расчетно-графической работы пройдет в четверг в 15:30 в ауд. 301л. Явка всем обязательна.',
     date: '2026-09-28',
     isUrgent: true,
     createdAt: '2026-09-28T08:30:00.000Z'
@@ -2407,8 +2396,13 @@ function updateStudentProfileUI() {
   const sideCourse = document.getElementById('sidebar-student-course');
   if (sideCourse) sideCourse.textContent = u.role === 'teacher' ? (u.dept || 'ТОГУ') : (u.course || '3 курс');
 
-  const roleText = u.role === 'teacher' ? 'Преподаватель' : (u.role === 'starosta' ? 'Староста' : 'Студент');
-  const roleClass = u.role === 'teacher' ? 'role-teacher' : (u.role === 'starosta' ? 'role-starosta' : 'role-student');
+  const roleText = u.role === 'teacher' ? 'Преподаватель' : 'Студент';
+  const roleClass = u.role === 'teacher' ? 'role-teacher' : 'role-student';
+
+  const logoutTeacherBtn = document.getElementById('auth-btn-logout-teacher');
+  if (logoutTeacherBtn) {
+    logoutTeacherBtn.classList.toggle('hidden', u.role !== 'teacher');
+  }
 
   const sideBadge = document.getElementById('sidebar-role-badge');
   if (sideBadge) {
@@ -2683,96 +2677,162 @@ function initAuthModal() {
     });
   }
 
-  const quickTabBtn = document.getElementById('authtab-btn-quick');
-  const regTabBtn = document.getElementById('authtab-btn-register');
-  const quickPanel = document.getElementById('authtab-quick-switch');
-  const regPanel = document.getElementById('authtab-register');
+  // Segmented navigation: Student Profile vs Teacher Login
+  const studentTabBtn = document.getElementById('authtab-btn-student');
+  const teacherTabBtn = document.getElementById('authtab-btn-teacher');
+  const studentPanel = document.getElementById('authtab-student');
+  const teacherPanel = document.getElementById('authtab-teacher');
 
-  if (quickTabBtn && regTabBtn) {
-    quickTabBtn.addEventListener('click', () => {
-      quickTabBtn.classList.add('active');
-      regTabBtn.classList.remove('active');
-      quickPanel.classList.remove('hidden');
-      quickPanel.classList.add('active');
-      regPanel.classList.add('hidden');
-      regPanel.classList.remove('active');
-    });
-
-    regTabBtn.addEventListener('click', () => {
-      regTabBtn.classList.add('active');
-      quickTabBtn.classList.remove('active');
-      regPanel.classList.remove('hidden');
-      regPanel.classList.add('active');
-      quickPanel.classList.add('hidden');
-      quickPanel.classList.remove('active');
-    });
-  }
-
-  document.querySelectorAll('.account-choice-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const userKey = btn.dataset.quickUser;
-      if (DEFAULT_USERS[userKey]) {
-        switchActiveUser(DEFAULT_USERS[userKey]);
-        closeAuthModal();
-        showToast(`Вы вошли как: ${DEFAULT_USERS[userKey].name}`);
+  if (studentTabBtn && teacherTabBtn) {
+    studentTabBtn.addEventListener('click', () => {
+      studentTabBtn.classList.add('active');
+      teacherTabBtn.classList.remove('active');
+      if (studentPanel) {
+        studentPanel.classList.remove('hidden');
+        studentPanel.classList.add('active');
+      }
+      if (teacherPanel) {
+        teacherPanel.classList.add('hidden');
+        teacherPanel.classList.remove('active');
       }
     });
-  });
 
-  const studentRoleBtn = document.getElementById('role-select-student');
-  const teacherRoleBtn = document.getElementById('role-select-teacher');
-  const groupField = document.getElementById('auth-group-field');
-  const deptField = document.getElementById('auth-dept-field');
-  const subjectField = document.getElementById('auth-subject-field');
-  let selectedRole = 'student';
-
-  if (studentRoleBtn && teacherRoleBtn) {
-    studentRoleBtn.addEventListener('click', () => {
-      selectedRole = 'student';
-      studentRoleBtn.classList.add('active');
-      teacherRoleBtn.classList.remove('active');
-      if (groupField) groupField.classList.remove('hidden');
-      if (deptField) deptField.classList.add('hidden');
-      if (subjectField) subjectField.classList.add('hidden');
-    });
-
-    teacherRoleBtn.addEventListener('click', () => {
-      selectedRole = 'teacher';
-      teacherRoleBtn.classList.add('active');
-      studentRoleBtn.classList.remove('active');
-      if (groupField) groupField.classList.add('hidden');
-      if (deptField) deptField.classList.remove('hidden');
-      if (subjectField) subjectField.classList.remove('hidden');
+    teacherTabBtn.addEventListener('click', () => {
+      teacherTabBtn.classList.add('active');
+      studentTabBtn.classList.remove('active');
+      if (teacherPanel) {
+        teacherPanel.classList.remove('hidden');
+        teacherPanel.classList.add('active');
+      }
+      if (studentPanel) {
+        studentPanel.classList.add('hidden');
+        studentPanel.classList.remove('active');
+      }
     });
   }
 
-  const form = document.getElementById('auth-custom-form');
-  if (form) {
-    form.addEventListener('submit', (e) => {
+  // Student profile form
+  const studentForm = document.getElementById('auth-student-form');
+  if (studentForm) {
+    studentForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const nameInput = document.getElementById('auth-name-input');
-      const name = nameInput ? nameInput.value.trim() : '';
-      if (!name) return;
+      const nameInput = document.getElementById('auth-student-name');
+      const groupInput = document.getElementById('auth-student-group');
+      const idInput = document.getElementById('auth-student-id');
 
-      const isTeacher = selectedRole === 'teacher';
-      const groupInput = document.getElementById('auth-group-input');
-      const deptInput = document.getElementById('auth-dept-input');
-      const subInput = document.getElementById('auth-subject-input');
+      const name = nameInput ? nameInput.value.trim() : 'Студент';
+      const group = groupInput ? groupInput.value.trim() : 'МБИ(б)-31';
+      const idNum = idInput ? idInput.value.trim() : '';
+
+      state.student = { name, group, idNum, course: '3 курс' };
+      state.saveStudent();
+
+      state.user = {
+        id: 'u_student_1',
+        role: 'student',
+        name,
+        group,
+        course: '3 курс',
+        idNum
+      };
+      state.saveUser();
+
+      closeAuthModal();
+      renderApp();
+      showToast('Профиль студента сохранен');
+    });
+  }
+
+  // Teacher select toggle custom inputs
+  const teacherSelect = document.getElementById('auth-teacher-select');
+  const customNameGrp = document.getElementById('auth-teacher-custom-name-group');
+  const customDeptGrp = document.getElementById('auth-teacher-custom-dept-group');
+
+  if (teacherSelect) {
+    teacherSelect.addEventListener('change', () => {
+      const isCustom = teacherSelect.value === 'custom';
+      if (customNameGrp) customNameGrp.classList.toggle('hidden', !isCustom);
+      if (customDeptGrp) customDeptGrp.classList.toggle('hidden', !isCustom);
+    });
+  }
+
+  // Protected teacher form submission
+  const teacherForm = document.getElementById('auth-teacher-form');
+  if (teacherForm) {
+    teacherForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const pwdInput = document.getElementById('auth-teacher-password');
+      const enteredPwd = pwdInput ? pwdInput.value.trim() : '';
+
+      if (enteredPwd !== TEACHER_ACCESS_CODE) {
+        showToast('Ошибка: неверный пароль кафедры ТОГУ');
+        if (pwdInput) {
+          pwdInput.value = '';
+          pwdInput.focus();
+        }
+        return;
+      }
+
+      const selectedVal = teacherSelect ? teacherSelect.value : 'Мурашова Е. В.';
+      let teacherObj = null;
+
+      if (selectedVal === 'custom') {
+        const cName = document.getElementById('auth-teacher-custom-name');
+        const cDept = document.getElementById('auth-teacher-custom-dept');
+        const nameVal = (cName && cName.value.trim()) ? cName.value.trim() : 'Преподаватель ТОГУ';
+        const deptVal = (cDept && cDept.value.trim()) ? cDept.value.trim() : 'Кафедра ТОГУ';
+        teacherObj = {
+          name: nameVal,
+          roleTitle: 'Преподаватель',
+          dept: deptVal,
+          subjects: ['Все дисциплины кафедры']
+        };
+      } else {
+        const matched = KNOWN_TEACHERS.find(t => t.name === selectedVal);
+        if (matched) {
+          teacherObj = { ...matched };
+        } else {
+          teacherObj = {
+            name: selectedVal,
+            roleTitle: 'Доцент',
+            dept: 'Кафедра ТОГУ',
+            subjects: ['Дисциплины кафедры']
+          };
+        }
+      }
 
       const customUser = {
-        id: 'u_' + Date.now(),
-        role: isTeacher ? 'teacher' : 'student',
-        name: name,
-        group: isTeacher ? '' : (groupInput && groupInput.value.trim() ? groupInput.value.trim() : 'МБИ(б)-31'),
-        course: isTeacher ? '' : '3 курс',
-        dept: isTeacher ? (deptInput && deptInput.value.trim() ? deptInput.value.trim() : 'Кафедра ТОГУ') : '',
-        roleTitle: isTeacher ? 'Преподаватель' : '',
-        subjects: isTeacher ? (subInput && subInput.value.trim() ? subInput.value.split(',').map(s => s.trim()).filter(Boolean) : []) : []
+        id: 'u_teacher_' + Date.now(),
+        role: 'teacher',
+        name: teacherObj.name,
+        roleTitle: teacherObj.roleTitle || 'Преподаватель',
+        dept: teacherObj.dept || 'Кафедра ТОГУ',
+        subjects: teacherObj.subjects || []
       };
 
       switchActiveUser(customUser);
       closeAuthModal();
-      showToast(`Вы вошли как: ${customUser.name}`);
+      switchView('view-teacher');
+      showToast(`Авторизован: ${customUser.name}`);
+    });
+  }
+
+  // Logout teacher button (returns safely to student mode)
+  const logoutBtn = document.getElementById('auth-btn-logout-teacher');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      const student = state.student || {};
+      const studentUser = {
+        id: 'u_student_1',
+        role: 'student',
+        name: student.name || 'Студент',
+        group: student.group || 'МБИ(б)-31',
+        course: student.course || '3 курс',
+        idNum: student.idNum || ''
+      };
+      switchActiveUser(studentUser);
+      closeAuthModal();
+      showToast('Режим преподавателя отключен');
     });
   }
 }
@@ -2782,10 +2842,16 @@ function openAuthModal() {
   if (!backdrop) return;
   updateStudentProfileUI();
 
-  const currentKey = Object.keys(DEFAULT_USERS).find(k => DEFAULT_USERS[k].name === state.user.name);
-  document.querySelectorAll('.account-choice-btn').forEach(btn => {
-    btn.classList.toggle('selected-account', btn.dataset.quickUser === currentKey);
-  });
+  // Populate student inputs with current student info
+  const nameInput = document.getElementById('auth-student-name');
+  const groupInput = document.getElementById('auth-student-group');
+  const idInput = document.getElementById('auth-student-id');
+  const pwdInput = document.getElementById('auth-teacher-password');
+
+  if (nameInput) nameInput.value = (state.student && state.student.name) ? state.student.name : (state.user && state.user.role === 'student' ? state.user.name : '');
+  if (groupInput) groupInput.value = (state.student && state.student.group) ? state.student.group : 'МБИ(б)-31';
+  if (idInput) idInput.value = (state.student && state.student.idNum) ? state.student.idNum : '';
+  if (pwdInput) pwdInput.value = '';
 
   backdrop.classList.remove('hidden');
   setTimeout(() => backdrop.classList.add('open'), 10);
@@ -2802,7 +2868,7 @@ function switchActiveUser(userObj) {
   state.user = { ...userObj };
   state.saveUser();
 
-  if (state.user.role === 'student' || state.user.role === 'starosta') {
+  if (state.user.role === 'student') {
     state.student.name = state.user.name;
     state.student.group = state.user.group || 'МБИ(б)-31';
     state.saveStudent();
@@ -3293,7 +3359,7 @@ function initSyncTools() {
   if (importBtn) {
     importBtn.addEventListener('click', () => {
       syncTitle.textContent = 'Импорт базы группы';
-      syncHint.textContent = 'Вставьте сюда JSON-код, полученный от преподавателя или старосты:';
+      syncHint.textContent = 'Вставьте сюда JSON-код, полученный от преподавателя или группы:';
       syncTextarea.value = '';
       actionBtn.textContent = '📥 Импортировать задания';
       actionBtn.onclick = () => {
