@@ -1,14 +1,578 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=./schedule/">
-  <title>Расписание МБИ(б)-31</title>
-  <script>
-    window.location.replace("./schedule/");
-  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ТОГУ Дневник · Электронное расписание и успеваемость</title>
+
+  <meta name="theme-color" content="#0a0a0c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ТОГУ Дневник">
+  <meta name="description" content="Универсальный студенческий дневник ТОГУ: интерактивное расписание, контроль домашних заданий, баллы БРС и календарь для ПК и смартфонов.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22 fill=%22none%22><rect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%2318181b%22/><path d=%22M8 11h16M8 16h16M8 21h10%22 stroke=%22%23f4f4f5%22 stroke-width=%222.2%22 stroke-linecap=%22round%22/></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
 </head>
-<body style="font-family: sans-serif; background: #090c10; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
-  <p>Перенаправление в <a href="./schedule/" style="color: #6366f1;">Расписание ТОГУ МБИ(б)-31</a>...</p>
+<body>
+  <div class="app-wrapper">
+
+    <aside class="desktop-sidebar" id="desktop-sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+            <path d="M6 6h10"></path>
+            <path d="M6 10h10"></path>
+            <path d="M6 14h6"></path>
+          </svg>
+        </div>
+        <div class="sidebar-brand-text">
+          <span class="sidebar-title">ТОГУ · Дневник</span>
+          <span class="sidebar-subtitle">Студенческий портал</span>
+        </div>
+      </div>
+
+      <div class="sidebar-student-card" id="sidebar-student-card" title="Нажмите, чтобы настроить профиль">
+        <div class="sidebar-student-avatar" id="sidebar-avatar-initials">СТ</div>
+        <div class="sidebar-student-info">
+          <div class="sidebar-student-name" id="sidebar-student-name">Студент</div>
+          <div class="sidebar-student-meta">
+            <span class="sidebar-group-badge" id="sidebar-student-group">МБИ(б)-31</span>
+            <span class="sidebar-divider">·</span>
+            <span id="sidebar-student-course">3 курс</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-target="view-schedule" id="sidebar-btn-schedule">
+          <div class="nav-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="18" height="18">
+              <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </div>
+          <span class="nav-label">Расписание пар</span>
+          <span class="nav-shortcut">1</span>
+        </button>
+
+        <button class="nav-item" data-target="view-homework" id="sidebar-btn-homework">
+          <div class="nav-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="18" height="18">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+            <span id="sidebar-badge-hw" class="sidebar-badge-pill hidden">0</span>
+          </div>
+          <span class="nav-label">Домашние задания</span>
+          <span class="nav-shortcut">2</span>
+        </button>
+
+        <button class="nav-item" data-target="view-grades" id="sidebar-btn-grades">
+          <div class="nav-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="18" height="18">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+          </div>
+          <span class="nav-label">Успеваемость БРС</span>
+          <span class="nav-shortcut">3</span>
+        </button>
+
+        <button class="nav-item" data-target="view-search" id="sidebar-btn-search">
+          <div class="nav-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="18" height="18">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
+          <span class="nav-label">Поиск по вузу</span>
+          <span class="nav-shortcut">/</span>
+        </button>
+
+        <button class="nav-item" data-target="view-settings" id="sidebar-btn-settings">
+          <div class="nav-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="18" height="18">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </div>
+          <span class="nav-label">Профиль и Вуз</span>
+          <span class="nav-shortcut">5</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-quick-tools">
+        <button id="quick-print-btn" class="sidebar-tool-btn" title="Распечатать расписание на листе А4">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          <span>Печать расписания</span>
+        </button>
+        <button id="quick-ical-btn" class="sidebar-tool-btn" title="Синхронизация с Google / Apple Calendar (.ics)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Экспорт в iCal (.ics)</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-links">
+          <a href="https://portal.togudv.ru" target="_blank" rel="noopener" class="sidebar-link">Портал ТОГУ ↗</a>
+          <span class="sidebar-divider">·</span>
+          <span class="sidebar-sem-tag">2026/27 уч. г.</span>
+        </div>
+        <button id="desktop-theme-toggle" class="sidebar-theme-btn" title="Сменить тему оформления">
+          <span class="theme-text">Тема</span>
+          <span class="theme-pill" id="theme-pill-text">Тёмная</span>
+        </button>
+      </div>
+    </aside>
+
+    <div class="app-main-area">
+
+      <header class="app-header">
+        <div class="header-top">
+          <div class="brand-block mobile-only" id="header-profile-block" title="Нажмите, чтобы настроить профиль">
+            <span class="brand-group" id="header-group-name">МБИ(б)-31</span>
+            <span class="brand-divider">·</span>
+            <span class="brand-student" id="header-student-name">Студент</span>
+          </div>
+
+          <div class="header-desktop-title desktop-only">
+            <h1 class="main-page-title" id="page-title-text">Расписание учебных занятий</h1>
+            <span class="university-title-tag">ТОГУ · Тихоокеанский государственный университет</span>
+          </div>
+
+          <div class="header-actions">
+            <button id="theme-toggle" class="icon-btn mobile-only" aria-label="Сменить тему" title="Переключить тему">
+              <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+              </svg>
+              <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="week-nav-bar">
+          <button id="prev-week-btn" class="week-nav-btn" aria-label="Предыдущая неделя" title="Предыдущая неделя">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+
+          <div class="week-nav-center" id="week-nav-center">
+            <div class="week-dates-title" id="week-range-text">21 – 27 сентября</div>
+            <div class="week-badges-row">
+              <span class="week-status-pill badge-den" id="week-status-pill">Знаменатель</span>
+              <button id="today-jump-btn" class="jump-today-btn hidden" title="Вернуться к сегодняшнему дню">Сегодня</button>
+            </div>
+          </div>
+
+          <button id="next-week-btn" class="week-nav-btn" aria-label="Следующая неделя" title="Следующая неделя">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        <div class="filter-controls">
+          <div class="subgroup-segmented" id="subgroup-selector">
+            <button class="sub-btn active" data-sub="all" title="Показывать все подгруппы">Все подгруппы</button>
+            <button class="sub-btn" data-sub="1" title="1 подгруппа (IELTS Ср)">1 подгр.</button>
+            <button class="sub-btn" data-sub="2" title="2 подгруппа (IELTS Сб)">2 подгр.</button>
+          </div>
+
+          <div class="right-filters-cluster">
+            <div class="pill-segmented" id="mode-selector">
+              <button class="pill-btn active" data-mode="calendar" id="mode-calendar-btn">По календарю</button>
+              <button class="pill-btn" data-mode="all" id="mode-all-btn">Все пары</button>
+            </div>
+
+            <div class="pill-segmented" id="format-selector">
+              <button class="pill-btn active" data-format="day" id="format-day-btn" title="Просмотр по выбранному дню">По дням</button>
+              <button class="pill-btn" data-format="grid" id="format-grid-btn" title="Сетка расписания на всю неделю">Сетка недели</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="day-tabs-scroll" id="day-tabs-container">
+          <div class="day-tabs" id="day-tabs">
+
+          </div>
+        </div>
+      </header>
+
+      <main class="main-content">
+
+        <section id="view-schedule" class="view-panel active">
+
+          <div id="day-schedule-view" class="day-schedule-view">
+            <div class="day-overview-header">
+              <div>
+                <h2 id="current-day-heading" class="day-heading">Вторник</h2>
+                <div id="current-day-subheading" class="day-subheading">23 сентября • 4 пары</div>
+              </div>
+              <button id="add-quick-hw-btn" class="quick-add-btn" title="Добавить домашку на этот день">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>ДЗ</span>
+              </button>
+            </div>
+
+            <div id="schedule-cards" class="schedule-cards-list">
+
+            </div>
+
+            <div id="empty-day-state" class="empty-state hidden">
+              <div class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="30" height="30">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </div>
+              <h3>В этот день пар нет</h3>
+              <p>По расписанию на эту дату нет занятий</p>
+            </div>
+          </div>
+
+          <div id="week-grid-view" class="week-grid-view hidden">
+
+          </div>
+        </section>
+
+        <section id="view-homework" class="view-panel">
+          <div class="section-top">
+            <div>
+              <h2 class="section-title">Все домашние задания</h2>
+              <p class="section-subtitle">Контроль дедлайнов и задач по всем предметам семестра</p>
+            </div>
+            <button id="new-hw-floating-btn" class="btn btn-primary btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Новое ДЗ
+            </button>
+          </div>
+
+          <div class="hw-filter-bar">
+            <button class="hw-filter-btn active" data-hw-filter="active">В процессе (<span id="hw-active-count">0</span>)</button>
+            <button class="hw-filter-btn" data-hw-filter="completed">Сделано (<span id="hw-done-count">0</span>)</button>
+            <button class="hw-filter-btn" data-hw-filter="all">Все (<span id="hw-total-count">0</span>)</button>
+          </div>
+
+          <div id="all-homework-list" class="homework-cards-list">
+
+          </div>
+        </section>
+
+        <section id="view-grades" class="view-panel">
+          <div class="section-top">
+            <div>
+              <h2 class="section-title">Успеваемость и баллы БРС</h2>
+              <p class="section-subtitle">Балльно-рейтинговая система ТОГУ (100-балльная шкала семестра)</p>
+            </div>
+            <button id="add-custom-grade-btn" class="btn btn-secondary btn-sm" title="Добавить предмет">
+              + Предмет
+            </button>
+          </div>
+
+          <div class="brs-stats-grid">
+            <div class="brs-stat-card">
+              <span class="brs-stat-label">Средний балл БРС</span>
+              <div class="brs-stat-val" id="brs-avg-val">84.2</div>
+              <span class="brs-stat-sub" id="brs-avg-status">Хорошо / Отлично</span>
+            </div>
+            <div class="brs-stat-card">
+              <span class="brs-stat-label">Допуск к сессии</span>
+              <div class="brs-stat-val text-success" id="brs-dopusk-val">Допущен</div>
+              <span class="brs-stat-sub">Все предметы &gt; 60 баллов</span>
+            </div>
+            <div class="brs-stat-card">
+              <span class="brs-stat-label">Прогноз стипендии</span>
+              <div class="brs-stat-val" id="brs-stipend-val">Академическая</div>
+              <span class="brs-stat-sub">при текущих баллах</span>
+            </div>
+          </div>
+
+          <div class="brs-legend-bar">
+            <span class="legend-pill tier-5">85–100: Отлично / Автомат</span>
+            <span class="legend-pill tier-4">73–84: Хорошо</span>
+            <span class="legend-pill tier-3">60–72: Удовл. / Зачет</span>
+            <span class="legend-pill tier-2">&lt; 60: Недопуск</span>
+          </div>
+
+          <div id="grades-cards-list" class="grades-cards-list">
+
+          </div>
+        </section>
+
+        <section id="view-search" class="view-panel">
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="global-search-input" placeholder="Поиск предмета, аудитории (301л), преподавателя или ДЗ...">
+            <button id="clear-search-btn" class="clear-search-btn hidden" aria-label="Очистить">✕</button>
+          </div>
+
+          <div id="search-results" class="search-results-list">
+
+          </div>
+        </section>
+
+        <section id="view-settings" class="view-panel">
+          <h2 class="section-title">Профиль и интеграция с вузом</h2>
+
+          <div class="settings-card">
+            <h3 class="card-subtitle">Данные студента</h3>
+            <div class="settings-form-grid">
+              <div class="form-group">
+                <label for="setting-student-name" class="form-label">ФИО студента</label>
+                <input type="text" id="setting-student-name" class="form-input" placeholder="Введите ваше имя или ФИО">
+              </div>
+              <div class="form-group">
+                <label for="setting-student-group" class="form-label">Академическая группа</label>
+                <input type="text" id="setting-student-group" class="form-input" placeholder="Например: МБИ(б)-31" value="МБИ(б)-31">
+              </div>
+              <div class="form-group">
+                <label for="setting-student-id" class="form-label">Номер студенческого / зачетки</label>
+                <input type="text" id="setting-student-id" class="form-input" placeholder="Необязательно">
+              </div>
+              <div class="form-group">
+                <label for="setting-default-subgroup" class="form-label">Подгруппа по умолчанию</label>
+                <select id="setting-default-subgroup" class="settings-select">
+                  <option value="all">Обе подгруппы</option>
+                  <option value="1">1 подгруппа</option>
+                  <option value="2">2 подгруппа</option>
+                </select>
+              </div>
+            </div>
+            <button id="save-profile-btn" class="btn btn-primary btn-sm align-self-start">
+              Сохранить профиль
+            </button>
+          </div>
+
+          <div class="settings-card">
+            <h3 class="card-subtitle">Данные и резервные копии</h3>
+            <p class="settings-hint mb-3">Все задания, баллы БРС и настройки хранятся в памяти браузера. Вы можете сохранить копию на компьютер или перенести на телефон.</p>
+            <div class="btn-group-stacked">
+              <button id="export-backup-btn" class="btn btn-secondary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Скачать полный бэкап дневника (JSON)
+              </button>
+              <label class="btn btn-secondary file-upload-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Загрузить бэкап из файла
+                <input type="file" id="import-backup-file" accept=".json" class="hidden">
+              </label>
+              <button id="reset-data-btn" class="btn btn-danger-subtle">
+                Сбросить данные к начальным
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3 class="card-subtitle">Обозначения корпусов ТОГУ</h3>
+            <ul class="legend-list">
+              <li><span class="legend-code">л</span> — Левый корпус (напр. 301л, 404л)</li>
+              <li><span class="legend-code">ц</span> — Центральный корпус (напр. 434ц)</li>
+              <li><span class="legend-code">ца</span> — Центральная аудиторная пристройка (359ца, 329ца)</li>
+              <li><span class="legend-code">па</span> — Правая пристройка (229па)</li>
+              <li><span class="legend-code">п</span> — Правый корпус (106п, 323п)</li>
+            </ul>
+          </div>
+        </section>
+      </main>
+
+      <nav class="bottom-nav">
+        <button class="nav-item active" data-target="view-schedule" id="nav-btn-schedule">
+          <div class="nav-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </div>
+          <span class="nav-label">Пары</span>
+        </button>
+
+        <button class="nav-item" data-target="view-homework" id="nav-btn-homework">
+          <div class="nav-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+            <span id="badge-hw-total" class="nav-badge hidden">0</span>
+          </div>
+          <span class="nav-label">Домашка</span>
+        </button>
+
+        <button class="nav-item" data-target="view-grades" id="nav-btn-grades">
+          <div class="nav-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+          </div>
+          <span class="nav-label">БРС</span>
+        </button>
+
+        <button class="nav-item" data-target="view-search" id="nav-btn-search">
+          <div class="nav-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
+          <span class="nav-label">Поиск</span>
+        </button>
+
+        <button class="nav-item" data-target="view-settings" id="nav-btn-settings">
+          <div class="nav-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </div>
+          <span class="nav-label">Профиль</span>
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <div id="hw-modal-backdrop" class="modal-backdrop">
+    <div class="bottom-sheet" id="hw-bottom-sheet">
+      <div class="sheet-drag-handle"></div>
+
+      <div class="sheet-header">
+        <h3 id="hw-modal-title" class="sheet-title">Записать задание</h3>
+        <button id="hw-modal-close" class="close-sheet-btn" aria-label="Закрыть">✕</button>
+      </div>
+
+      <form id="hw-form" class="sheet-form">
+        <input type="hidden" id="hw-edit-id" value="">
+        <input type="hidden" id="hw-target-day" value="">
+        <input type="hidden" id="hw-target-date" value="">
+
+        <div class="form-group">
+          <label for="hw-subject-select" class="form-label">Предмет</label>
+          <select id="hw-subject-select" class="form-select" required>
+
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="hw-date-input" class="form-label">Дата занятия / пары</label>
+          <input type="date" id="hw-date-input" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+          <label for="hw-text-input" class="form-label">Что нужно сделать?</label>
+          <textarea id="hw-text-input" class="form-textarea" rows="3" placeholder="Например: решить задачи 3-7 со слайда 12, подготовить доклад по теме ВТО..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="hw-due-date" class="form-label">Дедлайн (сдать к какой дате)</label>
+          <div class="quick-preset-chips">
+            <button type="button" class="preset-chip" data-preset="same-day">К этой дате</button>
+            <button type="button" class="preset-chip" data-preset="next-pair">К след. паре (+7 дн)</button>
+            <button type="button" class="preset-chip" data-preset="tomorrow">Завтра</button>
+          </div>
+          <input type="date" id="hw-due-date" class="form-input" required>
+        </div>
+
+        <div class="form-row-checkbox">
+          <label class="custom-checkbox-container">
+            <input type="checkbox" id="hw-is-urgent">
+            <span class="custom-checkbox-mark"></span>
+            <span class="checkbox-text">Срочное / важное задание</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="hw-link-input" class="form-label">Ссылка на материалы или ЭУК (опционально)</label>
+          <input type="url" id="hw-link-input" class="form-input" placeholder="https://portal.togudv.ru/...">
+        </div>
+
+        <div class="sheet-actions">
+          <button type="button" id="hw-delete-btn" class="btn btn-danger hidden">Удалить</button>
+          <button type="submit" id="hw-submit-btn" class="btn btn-primary flex-1">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="onboarding-modal-backdrop" class="modal-backdrop hidden">
+    <div class="bottom-sheet onboarding-sheet">
+      <div class="sheet-header">
+        <h3 class="sheet-title">Профиль студента</h3>
+        <button id="onboarding-modal-close" class="close-sheet-btn" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="onboarding-intro">
+        <div class="onboarding-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="28" height="28">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <p class="onboarding-desc">Укажите ваше имя и группу, чтобы персонализировать расписание, дедлайны ДЗ и баллы БРС.</p>
+      </div>
+      <form id="onboarding-form" class="sheet-form">
+        <div class="form-group">
+          <label for="onboarding-name-input" class="form-label">Ваше имя или ФИО</label>
+          <input type="text" id="onboarding-name-input" class="form-input" placeholder="Например: Алексей Смирнов" required>
+        </div>
+        <div class="form-group">
+          <label for="onboarding-group-input" class="form-label">Академическая группа</label>
+          <input type="text" id="onboarding-group-input" class="form-input" value="МБИ(б)-31" required>
+        </div>
+        <div class="form-group">
+          <label for="onboarding-id-input" class="form-label">Номер студенческого / зачетки (необязательно)</label>
+          <input type="text" id="onboarding-id-input" class="form-input" placeholder="Например: 2024100123">
+        </div>
+        <div class="sheet-actions">
+          <button type="submit" class="btn btn-primary flex-1">Начать пользоваться</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
 </body>
 </html>
