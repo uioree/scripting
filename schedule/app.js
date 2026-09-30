@@ -528,18 +528,18 @@ class AppState {
 
   loadStudent() {
     try {
-      const stored = localStorage.getItem('aura_schedule_student');
+      const stored = localStorage.getItem('togu_diary_student') || localStorage.getItem('aura_schedule_student');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed && parsed.name) return parsed;
+        if (parsed && parsed.name && parsed.name !== 'Студент' && parsed.idNum !== '2023100990') return parsed;
       }
     } catch (e) {
       console.error('Failed to load student profile:', e);
     }
     return {
-      name: 'Денис Федосеенко',
+      name: '',
       group: 'МБИ(б)-31',
-      idNum: '2023100990',
+      idNum: '',
       course: '3 курс'
     };
   }
@@ -608,6 +608,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initQuickTools();
   initDesktopKeyboardShortcuts();
   initTouchGestures();
+  initOnboardingModal();
+  initProfileClickHandlers();
 
   renderApp();
 
@@ -1983,36 +1985,119 @@ function initSettings() {
 function updateStudentProfileUI() {
   if (!state.student) return;
   const s = state.student;
+  const displayName = (s.name && s.name.trim()) ? s.name.trim() : 'Студент';
 
   const headerStudent = document.getElementById('header-student-name');
-  if (headerStudent) headerStudent.textContent = s.name;
+  if (headerStudent) headerStudent.textContent = displayName;
 
   const headerGroup = document.getElementById('header-group-name');
-  if (headerGroup) headerGroup.textContent = s.group;
+  if (headerGroup) headerGroup.textContent = s.group || 'МБИ(б)-31';
 
   const sideName = document.getElementById('sidebar-student-name');
-  if (sideName) sideName.textContent = s.name;
+  if (sideName) sideName.textContent = displayName;
 
   const sideGroup = document.getElementById('sidebar-student-group');
-  if (sideGroup) sideGroup.textContent = s.group;
+  if (sideGroup) sideGroup.textContent = s.group || 'МБИ(б)-31';
 
   const sideCourse = document.getElementById('sidebar-student-course');
   if (sideCourse) sideCourse.textContent = s.course || '3 курс';
 
   const avatar = document.getElementById('sidebar-avatar-initials');
-  if (avatar && s.name) {
-    const parts = s.name.trim().split(/\s+/);
-    avatar.textContent = parts.map(p => p[0]).slice(0, 2).join('').toUpperCase();
+  if (avatar) {
+    if (s.name && s.name.trim()) {
+      const parts = s.name.trim().split(/\s+/);
+      avatar.textContent = parts.map(p => p[0]).slice(0, 2).join('').toUpperCase();
+    } else {
+      avatar.textContent = 'СТ';
+    }
   }
 
   const setStudentName = document.getElementById('setting-student-name');
-  if (setStudentName && setStudentName !== document.activeElement) setStudentName.value = s.name;
+  if (setStudentName && setStudentName !== document.activeElement) setStudentName.value = s.name || '';
 
   const setStudentGroup = document.getElementById('setting-student-group');
-  if (setStudentGroup && setStudentGroup !== document.activeElement) setStudentGroup.value = s.group;
+  if (setStudentGroup && setStudentGroup !== document.activeElement) setStudentGroup.value = s.group || 'МБИ(б)-31';
 
   const setStudentId = document.getElementById('setting-student-id');
   if (setStudentId && setStudentId !== document.activeElement) setStudentId.value = s.idNum || '';
+}
+
+function initProfileClickHandlers() {
+  const sidebarCard = document.getElementById('sidebar-student-card');
+  if (sidebarCard) {
+    sidebarCard.addEventListener('click', () => {
+      switchView('view-settings');
+      const nameInput = document.getElementById('setting-student-name');
+      if (nameInput) setTimeout(() => nameInput.focus(), 150);
+    });
+  }
+
+  const mobileProfile = document.getElementById('header-profile-block');
+  if (mobileProfile) {
+    mobileProfile.addEventListener('click', () => {
+      switchView('view-settings');
+      const nameInput = document.getElementById('setting-student-name');
+      if (nameInput) setTimeout(() => nameInput.focus(), 150);
+    });
+  }
+}
+
+function initOnboardingModal() {
+  const backdrop = document.getElementById('onboarding-modal-backdrop');
+  const closeBtn = document.getElementById('onboarding-modal-close');
+  const form = document.getElementById('onboarding-form');
+  const nameInput = document.getElementById('onboarding-name-input');
+  const groupInput = document.getElementById('onboarding-group-input');
+  const idInput = document.getElementById('onboarding-id-input');
+
+  if (!backdrop || !form) return;
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeOnboardingModal);
+  }
+
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) closeOnboardingModal();
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = nameInput.value.trim();
+    const group = groupInput.value.trim() || 'МБИ(б)-31';
+    const idNum = idInput ? idInput.value.trim() : '';
+
+    if (!name) return;
+
+    state.student.name = name;
+    state.student.group = group;
+    state.student.idNum = idNum;
+    state.saveStudent();
+
+    updateStudentProfileUI();
+    closeOnboardingModal();
+    showToast(`Добро пожаловать, ${name}!`);
+  });
+
+  const storedStudent = localStorage.getItem('aura_schedule_student');
+  if (!storedStudent || !state.student.name) {
+    setTimeout(() => {
+      openOnboardingModal();
+    }, 450);
+  }
+}
+
+function openOnboardingModal() {
+  const backdrop = document.getElementById('onboarding-modal-backdrop');
+  if (backdrop) {
+    backdrop.classList.remove('hidden');
+    const nameInput = document.getElementById('onboarding-name-input');
+    if (nameInput) setTimeout(() => nameInput.focus(), 150);
+  }
+}
+
+function closeOnboardingModal() {
+  const backdrop = document.getElementById('onboarding-modal-backdrop');
+  if (backdrop) backdrop.classList.add('hidden');
 }
 
 function initQuickTools() {

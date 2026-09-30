@@ -2603,3 +2603,54 @@ body {
     margin-bottom: 8px !important;
   }
 }
+
+.sidebar-student-card {
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.sidebar-student-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-active);
+}
+
+.brand-block.mobile-only {
+  cursor: pointer;
+}
+
+.onboarding-sheet {
+  max-width: 440px;
+}
+
+.onboarding-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 6px 0 16px 0;
+}
+
+.onboarding-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-active);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.onboarding-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  max-width: 320px;
+}
+
+.btn-block {
+  width: 100%;
+}
+

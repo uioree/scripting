@@ -38,10 +38,10 @@
         </div>
       </div>
 
-      <div class="sidebar-student-card">
-        <div class="sidebar-student-avatar" id="sidebar-avatar-initials">ДФ</div>
+      <div class="sidebar-student-card" id="sidebar-student-card" title="Нажмите, чтобы настроить профиль">
+        <div class="sidebar-student-avatar" id="sidebar-avatar-initials">СТ</div>
         <div class="sidebar-student-info">
-          <div class="sidebar-student-name" id="sidebar-student-name">Денис Федосеенко</div>
+          <div class="sidebar-student-name" id="sidebar-student-name">Студент</div>
           <div class="sidebar-student-meta">
             <span class="sidebar-group-badge" id="sidebar-student-group">МБИ(б)-31</span>
             <span class="sidebar-divider">·</span>
@@ -147,10 +147,10 @@
 
       <header class="app-header">
         <div class="header-top">
-          <div class="brand-block mobile-only">
+          <div class="brand-block mobile-only" id="header-profile-block" title="Нажмите, чтобы настроить профиль">
             <span class="brand-group" id="header-group-name">МБИ(б)-31</span>
             <span class="brand-divider">·</span>
-            <span class="brand-student" id="header-student-name">Денис Федосеенко</span>
+            <span class="brand-student" id="header-student-name">Студент</span>
           </div>
 
           <div class="header-desktop-title desktop-only">
@@ -348,19 +348,19 @@
           <h2 class="section-title">Профиль и интеграция с вузом</h2>
 
           <div class="settings-card">
-            <h3 class="card-subtitle">Данные студента (для расписания)</h3>
+            <h3 class="card-subtitle">Данные студента</h3>
             <div class="settings-form-grid">
               <div class="form-group">
                 <label for="setting-student-name" class="form-label">ФИО студента</label>
-                <input type="text" id="setting-student-name" class="form-input" value="Денис Федосеенко">
+                <input type="text" id="setting-student-name" class="form-input" placeholder="Введите ваше имя или ФИО">
               </div>
               <div class="form-group">
                 <label for="setting-student-group" class="form-label">Академическая группа</label>
-                <input type="text" id="setting-student-group" class="form-input" value="МБИ(б)-31">
+                <input type="text" id="setting-student-group" class="form-input" placeholder="Например: МБИ(б)-31" value="МБИ(б)-31">
               </div>
               <div class="form-group">
                 <label for="setting-student-id" class="form-label">Номер студенческого / зачетки</label>
-                <input type="text" id="setting-student-id" class="form-input" value="2023100990">
+                <input type="text" id="setting-student-id" class="form-input" placeholder="Необязательно">
               </div>
               <div class="form-group">
                 <label for="setting-default-subgroup" class="form-label">Подгруппа по умолчанию</label>
@@ -374,17 +374,6 @@
             <button id="save-profile-btn" class="btn btn-primary btn-sm align-self-start">
               Сохранить профиль
             </button>
-          </div>
-
-          <div class="settings-card highlight-card">
-            <h3 class="card-subtitle">Готовность к внедрению в ТОГУ</h3>
-            <p class="settings-hint">Этот электронный дневник разработан как независимое PWA-приложение для Тихоокеанского государственного университета. Поддерживает офлайн-режим, расчет числителя/знаменателя, баллы БРС и синхронизацию с порталом.</p>
-            <div class="features-checklist">
-              <div class="feat-item">✓ Адаптировано под ПК, ноутбуки, планшеты и смартфоны</div>
-              <div class="feat-item">✓ Балльно-рейтинговая система (БРС) по стандарту ТОГУ</div>
-              <div class="feat-item">✓ Экспорт в Apple Calendar, Google Calendar и на печать A4</div>
-              <div class="feat-item">✓ Архитектура готова к подключению API расписания всех групп ТОГУ</div>
-            </div>
           </div>
 
           <div class="settings-card">
@@ -542,6 +531,41 @@
         <div class="sheet-actions">
           <button type="button" id="hw-delete-btn" class="btn btn-danger hidden">Удалить</button>
           <button type="submit" id="hw-submit-btn" class="btn btn-primary flex-1">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="onboarding-modal-backdrop" class="modal-backdrop hidden">
+    <div class="bottom-sheet onboarding-sheet">
+      <div class="sheet-header">
+        <h3 class="sheet-title">Профиль студента</h3>
+        <button id="onboarding-modal-close" class="close-sheet-btn" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="onboarding-intro">
+        <div class="onboarding-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="28" height="28">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <p class="onboarding-desc">Укажите ваше имя и группу, чтобы персонализировать расписание, дедлайны ДЗ и баллы БРС.</p>
+      </div>
+      <form id="onboarding-form" class="sheet-form">
+        <div class="form-group">
+          <label for="onboarding-name-input" class="form-label">Ваше имя или ФИО</label>
+          <input type="text" id="onboarding-name-input" class="form-input" placeholder="Например: Алексей Смирнов" required>
+        </div>
+        <div class="form-group">
+          <label for="onboarding-group-input" class="form-label">Академическая группа</label>
+          <input type="text" id="onboarding-group-input" class="form-input" value="МБИ(б)-31" required>
+        </div>
+        <div class="form-group">
+          <label for="onboarding-id-input" class="form-label">Номер студенческого / зачетки (необязательно)</label>
+          <input type="text" id="onboarding-id-input" class="form-input" placeholder="Например: 2024100123">
+        </div>
+        <div class="sheet-actions">
+          <button type="submit" class="btn btn-primary flex-1">Начать пользоваться</button>
         </div>
       </form>
     </div>
