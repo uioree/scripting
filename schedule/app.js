@@ -419,6 +419,66 @@ const DEFAULT_HOMEWORK = [
   }
 ];
 
+// Seed BRS subjects & grades for semester
+const DEFAULT_GRADES = [
+  {
+    id: 'grade-1',
+    subject: 'Стратегический менеджмент',
+    teacher: 'Пенегина И. Т.',
+    controlType: 'Экзамен',
+    points: 88,
+    notes: 'Реферат сдан (+15б), кейс 1 защищен (+25б)'
+  },
+  {
+    id: 'grade-2',
+    subject: 'Анализ хозяйственной деятельности предприятия',
+    teacher: 'Мурашова Е. В.',
+    controlType: 'Экзамен',
+    points: 82,
+    notes: 'Лабораторные работы 1-3 сданы (+30б)'
+  },
+  {
+    id: 'grade-3',
+    subject: 'Международный менеджмент',
+    teacher: 'Тюленева Т. И.',
+    controlType: 'Зачёт с оценкой',
+    points: 92,
+    notes: 'Автомат по итогам деловой игры (+40б)'
+  },
+  {
+    id: 'grade-4',
+    subject: 'Организация и техника внешнеторговых операций',
+    teacher: 'Логинова В. А.',
+    controlType: 'Экзамен',
+    points: 79,
+    notes: 'Подготовить доклад по аккредитивам'
+  },
+  {
+    id: 'grade-5',
+    subject: 'Подготовка к международному экзамену IELTS/TOEFL',
+    teacher: 'Остапенко А. Б.',
+    controlType: 'Зачёт',
+    points: 85,
+    notes: 'Mock Test пройден на Band 7.0'
+  },
+  {
+    id: 'grade-6',
+    subject: 'Международные экономические организации и региональные объединения',
+    teacher: 'Мурашова Е. В.',
+    controlType: 'Зачёт',
+    points: 76,
+    notes: 'Эссе по странам АСЕАН'
+  },
+  {
+    id: 'grade-7',
+    subject: 'Экономика стран и регионов: азиатско-тихоокеанский регион',
+    teacher: 'Мурашова Е. В.',
+    controlType: 'Зачёт',
+    points: 80,
+    notes: 'Презентация по экономике Японии'
+  }
+];
+
 // ==========================================
 // 2. STATE MANAGEMENT
 // ==========================================
@@ -434,10 +494,13 @@ class AppState {
     // Filter modes
     this.displayMode = localStorage.getItem('aura_schedule_mode') || 'calendar'; // 'calendar' | 'all'
     this.subgroupFilter = localStorage.getItem('aura_schedule_subgroup') || 'all'; // 'all' | '1' | '2'
+    this.scheduleFormat = localStorage.getItem('aura_schedule_format') || 'day'; // 'day' | 'grid'
     this.theme = localStorage.getItem('aura_schedule_theme') || 'dark';
     this.currentView = 'view-schedule';
     this.hwFilter = 'active'; // 'active' | 'completed' | 'all'
     this.homework = this.loadHomework();
+    this.grades = this.loadGrades();
+    this.student = this.loadStudent();
   }
 
   loadHomework() {
@@ -466,6 +529,53 @@ class AppState {
       localStorage.setItem('aura_schedule_homework', JSON.stringify(this.homework));
     } catch (e) {
       console.error('Failed to save homework:', e);
+    }
+  }
+
+  loadGrades() {
+    try {
+      const stored = localStorage.getItem('aura_schedule_grades');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load grades:', e);
+    }
+    return DEFAULT_GRADES;
+  }
+
+  saveGrades() {
+    try {
+      localStorage.setItem('aura_schedule_grades', JSON.stringify(this.grades));
+    } catch (e) {
+      console.error('Failed to save grades:', e);
+    }
+  }
+
+  loadStudent() {
+    try {
+      const stored = localStorage.getItem('aura_schedule_student');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.name) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load student profile:', e);
+    }
+    return {
+      name: 'Денис Федосеенко',
+      group: 'МБИ(б)-31',
+      idNum: '2023100990',
+      course: '3 курс'
+    };
+  }
+
+  saveStudent() {
+    try {
+      localStorage.setItem('aura_schedule_student', JSON.stringify(this.student));
+    } catch (e) {
+      console.error('Failed to save student profile:', e);
     }
   }
 
@@ -532,6 +642,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initHomeworkModal();
   initSearch();
   initSettings();
+  initQuickTools();
+  initDesktopKeyboardShortcuts();
   initTouchGestures();
 
   renderApp();
@@ -549,40 +661,79 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- Theme handling ---
 function initTheme() {
   document.documentElement.setAttribute('data-theme', state.theme);
+  updateThemeUI();
+
   const themeToggle = document.getElementById('theme-toggle');
-  themeToggle.addEventListener('click', () => {
-    state.theme = state.theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', state.theme);
-    localStorage.setItem('aura_schedule_theme', state.theme);
-  });
+  if (themeToggle) {
+    themeToggle.addEventListener('click', toggleTheme);
+  }
+  const desktopToggle = document.getElementById('desktop-theme-toggle');
+  if (desktopToggle) {
+    desktopToggle.addEventListener('click', toggleTheme);
+  }
 }
 
-// --- Navigation ---
+function toggleTheme() {
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', state.theme);
+  localStorage.setItem('aura_schedule_theme', state.theme);
+  updateThemeUI();
+}
+
+function updateThemeUI() {
+  const isDark = state.theme === 'dark';
+  const pillText = document.getElementById('theme-pill-text');
+  if (pillText) {
+    pillText.textContent = isDark ? 'Тёмная' : 'Светлая';
+  }
+}
+
+// --- Navigation & Unified View Switching ---
+function switchView(targetView) {
+  if (!targetView) return;
+  state.currentView = targetView;
+
+  // Sync active state across sidebar buttons and bottom-nav buttons
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.target === targetView);
+  });
+
+  // Switch visible panel
+  document.querySelectorAll('.view-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === targetView);
+  });
+
+  // Update desktop page title
+  const titleMap = {
+    'view-schedule': 'Расписание учебных занятий',
+    'view-homework': 'Домашние задания и дедлайны',
+    'view-grades': 'Успеваемость и баллы БРС',
+    'view-search': 'Справочник и поиск по вузу',
+    'view-settings': 'Профиль студента и настройки'
+  };
+  const titleEl = document.getElementById('page-title-text');
+  if (titleEl && titleMap[targetView]) {
+    titleEl.textContent = titleMap[targetView];
+  }
+
+  // Trigger view-specific rendering
+  if (targetView === 'view-schedule') {
+    renderScheduleCards();
+  } else if (targetView === 'view-homework') {
+    renderAllHomeworkView();
+  } else if (targetView === 'view-grades') {
+    renderGradesView();
+  } else if (targetView === 'view-search') {
+    const sInput = document.getElementById('global-search-input');
+    if (sInput) sInput.focus();
+  }
+}
+
 function initNavigation() {
-  const navBtns = document.querySelectorAll('.nav-item');
-  navBtns.forEach(btn => {
+  document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
       const targetView = btn.dataset.target;
-      if (!targetView) return;
-
-      navBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      document.querySelectorAll('.view-panel').forEach(panel => {
-        panel.classList.remove('active');
-      });
-
-      const targetPanel = document.getElementById(targetView);
-      if (targetPanel) {
-        targetPanel.classList.add('active');
-        state.currentView = targetView;
-      }
-
-      if (targetView === 'view-homework') {
-        renderAllHomeworkView();
-      } else if (targetView === 'view-search') {
-        document.getElementById('global-search-input').focus();
-      }
+      if (targetView) switchView(targetView);
     });
   });
 }
@@ -610,35 +761,55 @@ function initWeekNavigator() {
   });
 }
 
-// --- Filters (Subgroup & Display Mode) ---
+// --- Filters (Subgroup, Display Mode & Schedule Format) ---
 function initFilters() {
   // Subgroup selector
   const subgroupSelector = document.getElementById('subgroup-selector');
-  subgroupSelector.querySelectorAll('.sub-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.sub === state.subgroupFilter);
+  if (subgroupSelector) {
+    subgroupSelector.querySelectorAll('.sub-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.sub === state.subgroupFilter);
 
-    btn.addEventListener('click', () => {
-      subgroupSelector.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.subgroupFilter = btn.dataset.sub;
-      localStorage.setItem('aura_schedule_subgroup', state.subgroupFilter);
-      renderScheduleCards();
+      btn.addEventListener('click', () => {
+        subgroupSelector.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.subgroupFilter = btn.dataset.sub;
+        localStorage.setItem('aura_schedule_subgroup', state.subgroupFilter);
+        renderScheduleCards();
+      });
     });
-  });
+  }
 
   // Display Mode selector ('calendar' vs 'all')
   const modeSelector = document.getElementById('mode-selector');
-  modeSelector.querySelectorAll('.pill-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.mode === state.displayMode);
+  if (modeSelector) {
+    modeSelector.querySelectorAll('.pill-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === state.displayMode);
 
-    btn.addEventListener('click', () => {
-      modeSelector.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.displayMode = btn.dataset.mode;
-      localStorage.setItem('aura_schedule_mode', state.displayMode);
-      renderApp();
+      btn.addEventListener('click', () => {
+        modeSelector.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.displayMode = btn.dataset.mode;
+        localStorage.setItem('aura_schedule_mode', state.displayMode);
+        renderApp();
+      });
     });
-  });
+  }
+
+  // Schedule Format selector ('day' vs 'grid')
+  const formatSelector = document.getElementById('format-selector');
+  if (formatSelector) {
+    formatSelector.querySelectorAll('.pill-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.format === state.scheduleFormat);
+
+      btn.addEventListener('click', () => {
+        formatSelector.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.scheduleFormat = btn.dataset.format;
+        localStorage.setItem('aura_schedule_format', state.scheduleFormat);
+        renderScheduleCards();
+      });
+    });
+  }
 
   // Homework view filter buttons
   document.querySelectorAll('.hw-filter-btn').forEach(btn => {
@@ -658,6 +829,8 @@ function renderApp() {
   renderScheduleCards();
   updateHomeworkBadges();
   populateSubjectDropdown();
+  renderGradesView();
+  updateStudentProfileUI();
 }
 
 // --- Render Week Navigation Bar ---
@@ -769,6 +942,22 @@ function scrollTabIntoView(tab) {
 
 // --- Render Schedule Cards for Selected Date ---
 function renderScheduleCards() {
+  const dayScheduleView = document.getElementById('day-schedule-view');
+  const weekGridView = document.getElementById('week-grid-view');
+  const dayTabsContainer = document.getElementById('day-tabs-container');
+
+  if (state.scheduleFormat === 'grid') {
+    if (dayScheduleView) dayScheduleView.classList.add('hidden');
+    if (weekGridView) weekGridView.classList.remove('hidden');
+    if (dayTabsContainer) dayTabsContainer.classList.add('hidden');
+    renderWeekGridView();
+    return;
+  }
+
+  if (dayScheduleView) dayScheduleView.classList.remove('hidden');
+  if (weekGridView) weekGridView.classList.add('hidden');
+  if (dayTabsContainer) dayTabsContainer.classList.remove('hidden');
+
   const container = document.getElementById('schedule-cards');
   const emptyState = document.getElementById('empty-day-state');
   const dayHeading = document.getElementById('current-day-heading');
@@ -841,21 +1030,23 @@ function renderScheduleCards() {
       card.classList.add('current-pair');
     }
 
-    // Badges
-    const typeBadge = pair.type === 'lecture'
-      ? '<span class="badge badge-lecture">Лекция</span>'
-      : '<span class="badge badge-practice">Практика</span>';
+    // Quiet minimal tags
+    const typeBadge = `<span class="badge">${pair.type === 'lecture' ? 'Лекция' : 'Практика'}</span>`;
 
     let weekBadge = '';
-    if (pair.week === 'numerator') {
-      weekBadge = '<span class="badge badge-num">Числитель</span>';
-    } else if (pair.week === 'denominator') {
-      weekBadge = '<span class="badge badge-den">Знаменатель</span>';
+    if (state.displayMode === 'all') {
+      if (pair.week === 'numerator') {
+        weekBadge = '<span class="badge badge-num">Числитель</span>';
+      } else if (pair.week === 'denominator') {
+        weekBadge = '<span class="badge badge-den">Знаменатель</span>';
+      }
     }
+
+    let liveBadge = isCurrent ? '<span class="badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.4);">Идёт сейчас</span>' : '';
 
     let subgroupBadge = '';
     if (pair.subgroup !== 'all') {
-      subgroupBadge = `<span class="badge badge-subgroup">${pair.subgroup} подгруппа</span>`;
+      subgroupBadge = `<span class="badge">${pair.subgroup} подгруппа</span>`;
     }
 
     // Pair Homework: matches subject AND (date === selectedDateStr OR dueDate === selectedDateStr)
@@ -872,8 +1063,8 @@ function renderScheduleCards() {
           <div class="card-hw-body" title="Нажмите, чтобы редактировать">
             <div class="card-hw-text">${escapeHtml(hw.text)}</div>
             <div class="card-hw-meta">
-              ${hw.dueDate ? `<span>📅 сдать до ${formatShortDate(hw.dueDate)}</span>` : ''}
-              ${hw.isUrgent ? `<span class="hw-urgent-tag">🔥 Срочно</span>` : ''}
+              ${hw.dueDate ? `<span>до ${formatShortDate(hw.dueDate)}</span>` : ''}
+              ${hw.isUrgent ? `<span class="hw-urgent-tag">Срочно</span>` : ''}
             </div>
           </div>
           <button class="card-hw-delete-btn" aria-label="Удалить" title="Удалить задание">✕</button>
@@ -901,7 +1092,7 @@ function renderScheduleCards() {
       hwHtml = `
         <div class="pair-homework-section">
           <div class="hw-section-header">
-            <span class="hw-section-label">Домашнее задание на это число</span>
+            <span class="hw-section-label">Домашнее задание</span>
             <button class="btn-card-add-hw" data-subject="${escapeHtml(pair.subject)}" data-date="${state.selectedDateStr}">
               + Записать ДЗ
             </button>
@@ -996,6 +1187,96 @@ function attachHomeworkCardEvents(card) {
   });
 }
 
+// --- Render Full Week Timetable Grid for PC / Desktop ---
+function renderWeekGridView() {
+  const container = document.getElementById('week-grid-view');
+  if (!container) return;
+
+  const weekType = state.getCurrentWeekType();
+  const weekDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+  let columnsHtml = '';
+
+  weekDays.forEach((dayKey, idx) => {
+    const dayMeta = DAYS_META.find(d => d.key === dayKey);
+    const dayDate = new Date(state.currentMonday);
+    dayDate.setDate(dayDate.getDate() + idx);
+    const dayDateStr = toDateStr(dayDate);
+    const isToday = (dayDateStr === state.todayStr);
+
+    // Filter pairs for this day
+    const dayPairs = SCHEDULE_DATA.filter(pair => {
+      if (pair.day !== dayKey) return false;
+      if (state.displayMode !== 'all') {
+        if (pair.week !== 'all' && pair.week !== weekType) return false;
+      }
+      if (state.subgroupFilter !== 'all') {
+        if (pair.subgroup !== 'all' && pair.subgroup !== state.subgroupFilter) return false;
+      }
+      return true;
+    });
+
+    dayPairs.sort((a, b) => a.pairNum - b.pairNum);
+
+    let pairsHtml = '';
+    if (dayPairs.length === 0) {
+      pairsHtml = `<div class="grid-empty-day">Занятий нет</div>`;
+    } else {
+      pairsHtml = dayPairs.map(p => {
+        const pairHw = state.homework.filter(hw => hw.subject === p.subject && (hw.date === dayDateStr || hw.dueDate === dayDateStr));
+        const hasHw = pairHw.length > 0;
+        return `
+          <div class="grid-pair-chip" data-day="${dayKey}" data-date="${dayDateStr}" data-pair-id="${p.id}" title="Нажмите, чтобы открыть день">
+            <div class="grid-chip-top">
+              <span class="grid-chip-time">${p.pairNum} пара · ${p.timeStart}</span>
+              <span class="grid-chip-room">${p.room}</span>
+            </div>
+            <div class="grid-chip-subject">${escapeHtml(p.subject)}</div>
+            <div class="grid-chip-meta">
+              <span class="grid-chip-type">${p.type === 'lecture' ? 'лк' : 'пр'}</span>
+              <span class="grid-chip-teacher">${p.teacher.split(' ')[0]}</span>
+              ${hasHw ? `<span class="grid-hw-indicator">● ДЗ (${pairHw.length})</span>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    columnsHtml += `
+      <div class="grid-col ${isToday ? 'grid-col-today' : ''}" data-day="${dayKey}" data-date="${dayDateStr}">
+        <div class="grid-col-header">
+          <div class="grid-col-dayname">${dayMeta.full}</div>
+          <div class="grid-col-date">${dayDate.getDate()} ${MONTH_NAMES_SHORT[dayDate.getMonth()]} ${isToday ? '<span class="grid-today-badge">Сегодня</span>' : ''}</div>
+        </div>
+        <div class="grid-col-pairs">${pairsHtml}</div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = `
+    <div class="week-grid-timetable">
+      ${columnsHtml}
+    </div>
+  `;
+
+  // Clicking any chip opens day view for that date
+  container.querySelectorAll('.grid-pair-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const dateStr = chip.dataset.date;
+      if (dateStr) {
+        state.selectedDateStr = dateStr;
+        state.scheduleFormat = 'day';
+        localStorage.setItem('aura_schedule_format', 'day');
+        const fmtDayBtn = document.getElementById('format-day-btn');
+        const fmtGridBtn = document.getElementById('format-grid-btn');
+        if (fmtDayBtn) fmtDayBtn.classList.add('active');
+        if (fmtGridBtn) fmtGridBtn.classList.remove('active');
+        renderApp();
+      }
+    });
+  });
+}
+
 // --- Toggle Homework Status ---
 function toggleHomeworkStatus(hwId, isCompleted) {
   const hw = state.homework.find(h => h.id === hwId);
@@ -1009,7 +1290,7 @@ function toggleHomeworkStatus(hwId, isCompleted) {
     } else if (state.currentView === 'view-homework') {
       renderAllHomeworkView();
     }
-    showToast(isCompleted ? 'Задание выполнено! 🎉' : 'Задание возвращено в активные');
+    showToast(isCompleted ? 'Задание выполнено' : 'Задание возвращено в активные');
   }
 }
 
@@ -1064,9 +1345,13 @@ function renderAllHomeworkView() {
   if (displayTasks.length === 0) {
     listContainer.innerHTML = `
       <div class="empty-state">
-        <div class="empty-icon">✨</div>
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="30" height="30">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
         <h3>Нет заданий</h3>
-        <p>В этом списке пока нет домашних заданий. Нажмите «Новое ДЗ», чтобы записать задачу к любому дню!</p>
+        <p>В этом списке пока нет домашних заданий. Нажмите «Новое ДЗ», чтобы записать задачу к любому дню.</p>
       </div>
     `;
     return;
@@ -1086,9 +1371,9 @@ function renderAllHomeworkView() {
         <span class="hw-full-subject">${escapeHtml(hw.subject)}</span>
         <div class="hw-full-text">${escapeHtml(hw.text)}</div>
         <div class="hw-full-meta">
-          ${classDateFormatted ? `<span>🗓 Занятие: ${classDateFormatted}</span>` : ''}
-          ${dueDateFormatted ? `<span>⏰ Сдать до: ${dueDateFormatted}</span>` : ''}
-          ${hw.isUrgent ? `<span class="hw-urgent-tag">🔥 Срочно</span>` : ''}
+          ${classDateFormatted ? `<span>Занятие: ${classDateFormatted}</span>` : ''}
+          ${dueDateFormatted ? `<span>Дедлайн: ${dueDateFormatted}</span>` : ''}
+          ${hw.isUrgent ? `<span class="hw-urgent-tag">Срочно</span>` : ''}
           ${hw.link ? `<a href="${escapeHtml(hw.link)}" target="_blank" rel="noopener" class="hw-full-link">Материалы ↗</a>` : ''}
         </div>
       </div>
@@ -1110,6 +1395,142 @@ function renderAllHomeworkView() {
     });
 
     listContainer.appendChild(card);
+  });
+}
+
+// --- Render Grades & BRS Tracker (Балльно-рейтинговая система ТОГУ) ---
+function renderGradesView() {
+  const container = document.getElementById('grades-cards-list');
+  const avgValEl = document.getElementById('brs-avg-val');
+  const avgStatusEl = document.getElementById('brs-avg-status');
+  const dopuskEl = document.getElementById('brs-dopusk-val');
+  const stipendEl = document.getElementById('brs-stipend-val');
+  const stipendSubEl = document.getElementById('brs-stipend-sub');
+
+  if (!container || !state.grades) return;
+
+  // Calculate metrics
+  let totalPoints = 0;
+  let minPoints = 100;
+  let countBelow60 = 0;
+
+  state.grades.forEach(g => {
+    const pts = Number(g.points) || 0;
+    totalPoints += pts;
+    if (pts < minPoints) minPoints = pts;
+    if (pts < 60) countBelow60++;
+  });
+
+  const count = state.grades.length || 1;
+  const avg = (totalPoints / count).toFixed(1);
+
+  if (avgValEl) avgValEl.textContent = avg;
+  if (avgStatusEl) {
+    if (avg >= 85) avgStatusEl.textContent = 'Отлично / Автомат';
+    else if (avg >= 73) avgStatusEl.textContent = 'Хорошо';
+    else if (avg >= 60) avgStatusEl.textContent = 'Удовлетворительно';
+    else avgStatusEl.textContent = 'Требуется пересдача';
+  }
+
+  if (dopuskEl) {
+    if (countBelow60 === 0) {
+      dopuskEl.textContent = 'Допущен';
+      dopuskEl.className = 'brs-stat-val text-success';
+    } else {
+      dopuskEl.textContent = `${countBelow60} задолжн.`;
+      dopuskEl.className = 'brs-stat-val text-danger';
+    }
+  }
+
+  if (stipendEl) {
+    if (countBelow60 > 0 || avg < 73) {
+      stipendEl.textContent = 'Без стипендии';
+      if (stipendSubEl) stipendSubEl.textContent = 'есть оценки ниже "4"';
+    } else if (avg >= 85) {
+      stipendEl.textContent = 'Повышенная';
+      if (stipendSubEl) stipendSubEl.textContent = 'все предметы на "отлично"';
+    } else {
+      stipendEl.textContent = 'Академическая';
+      if (stipendSubEl) stipendSubEl.textContent = 'сессия без троек';
+    }
+  }
+
+  // Render subject cards
+  container.innerHTML = state.grades.map(g => {
+    const pts = Math.min(100, Math.max(0, Number(g.points) || 0));
+    let tierClass = 'tier-2';
+    let tierLabel = 'Недопуск (<60)';
+    if (pts >= 85) { tierClass = 'tier-5'; tierLabel = 'Отлично (5) / Автомат'; }
+    else if (pts >= 73) { tierClass = 'tier-4'; tierLabel = 'Хорошо (4)'; }
+    else if (pts >= 60) { tierClass = 'tier-3'; tierLabel = 'Удовл. (3) / Зачет'; }
+
+    return `
+      <div class="grade-card" data-grade-id="${g.id}">
+        <div class="grade-card-top">
+          <div class="grade-card-heading">
+            <span class="grade-control-type">${escapeHtml(g.controlType || 'Экзамен')}</span>
+            <h3 class="grade-subject-title">${escapeHtml(g.subject)}</h3>
+            <span class="grade-teacher">${escapeHtml(g.teacher || '')}</span>
+          </div>
+          <div class="grade-score-badge ${tierClass}">
+            <span class="grade-score-num">${pts}</span>
+            <span class="grade-score-max">/ 100</span>
+          </div>
+        </div>
+
+        <div class="grade-progress-track">
+          <div class="grade-progress-fill ${tierClass}" style="width: ${pts}%;"></div>
+        </div>
+
+        <div class="grade-tier-row">
+          <span class="grade-tier-name ${tierClass}">${tierLabel}</span>
+          <div class="grade-quick-adjusters">
+            <button class="adjust-btn btn-sub-5" data-delta="-5" title="Вычесть 5 баллов">−5</button>
+            <button class="adjust-btn btn-sub-1" data-delta="-1" title="Вычесть 1 балл">−1</button>
+            <input type="number" class="grade-points-input" min="0" max="100" value="${pts}">
+            <button class="adjust-btn btn-add-1" data-delta="1" title="Прибавить 1 балл">+1</button>
+            <button class="adjust-btn btn-add-5" data-delta="5" title="Прибавить 5 баллов">+5</button>
+          </div>
+        </div>
+
+        <div class="grade-notes-wrap">
+          <input type="text" class="grade-notes-input" placeholder="Заметки по баллам, условия автомата, дедлайны..." value="${escapeHtml(g.notes || '')}">
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Event listeners for score adjusters and notes
+  container.querySelectorAll('.grade-card').forEach(card => {
+    const id = card.dataset.gradeId;
+    const gradeObj = state.grades.find(item => item.id === id);
+    if (!gradeObj) return;
+
+    card.querySelectorAll('.adjust-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const delta = parseInt(btn.dataset.delta, 10);
+        gradeObj.points = Math.min(100, Math.max(0, (Number(gradeObj.points) || 0) + delta));
+        state.saveGrades();
+        renderGradesView();
+      });
+    });
+
+    const numInput = card.querySelector('.grade-points-input');
+    if (numInput) {
+      numInput.addEventListener('change', () => {
+        gradeObj.points = Math.min(100, Math.max(0, parseInt(numInput.value, 10) || 0));
+        state.saveGrades();
+        renderGradesView();
+      });
+    }
+
+    const notesInput = card.querySelector('.grade-notes-input');
+    if (notesInput) {
+      notesInput.addEventListener('blur', () => {
+        gradeObj.notes = notesInput.value.trim();
+        state.saveGrades();
+      });
+    }
   });
 }
 
@@ -1189,7 +1610,7 @@ function initHomeworkModal() {
         createdAt: new Date().toISOString()
       };
       state.homework.unshift(newHw);
-      showToast(`Задание сохранено на ${formatShortDate(date)}!`);
+      showToast(`Задание сохранено на ${formatShortDate(date)}`);
     }
 
     state.saveHomework();
@@ -1274,15 +1695,28 @@ function populateSubjectDropdown() {
   select.innerHTML = subjects.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
 }
 
-// Update Badges on Bottom Nav
+// Update Badges on Bottom Nav & Desktop Sidebar
 function updateHomeworkBadges() {
   const badgeTotal = document.getElementById('badge-hw-total');
+  const sidebarBadge = document.getElementById('sidebar-badge-hw');
   const activeCount = state.homework.filter(h => !h.isCompleted).length;
-  if (activeCount > 0) {
-    badgeTotal.textContent = activeCount;
-    badgeTotal.classList.remove('hidden');
-  } else {
-    badgeTotal.classList.add('hidden');
+
+  if (badgeTotal) {
+    if (activeCount > 0) {
+      badgeTotal.textContent = activeCount;
+      badgeTotal.classList.remove('hidden');
+    } else {
+      badgeTotal.classList.add('hidden');
+    }
+  }
+
+  if (sidebarBadge) {
+    if (activeCount > 0) {
+      sidebarBadge.textContent = activeCount;
+      sidebarBadge.classList.remove('hidden');
+    } else {
+      sidebarBadge.classList.add('hidden');
+    }
   }
 }
 
@@ -1502,64 +1936,267 @@ function renderSearchResults(query, container) {
   }
 }
 
-// --- Settings & Backup ---
+// --- Settings & Profile & Backup ---
 function initSettings() {
   const subgroupSelect = document.getElementById('setting-default-subgroup');
-  subgroupSelect.value = state.subgroupFilter;
+  if (subgroupSelect) {
+    subgroupSelect.value = state.subgroupFilter;
 
-  subgroupSelect.addEventListener('change', () => {
-    state.subgroupFilter = subgroupSelect.value;
-    localStorage.setItem('aura_schedule_subgroup', state.subgroupFilter);
-    const subgroupSelector = document.getElementById('subgroup-selector');
-    subgroupSelector.querySelectorAll('.sub-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.sub === state.subgroupFilter);
+    subgroupSelect.addEventListener('change', () => {
+      state.subgroupFilter = subgroupSelect.value;
+      localStorage.setItem('aura_schedule_subgroup', state.subgroupFilter);
+      const subgroupSelector = document.getElementById('subgroup-selector');
+      if (subgroupSelector) {
+        subgroupSelector.querySelectorAll('.sub-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.sub === state.subgroupFilter);
+        });
+      }
+      renderScheduleCards();
+      showToast('Настройка подгруппы сохранена');
     });
-    renderScheduleCards();
-    showToast('Настройка подгруппы сохранена');
-  });
+  }
 
-  // Export JSON
-  document.getElementById('export-backup-btn').addEventListener('click', () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.homework, null, 2));
-    const dlAnchorElem = document.createElement('a');
-    dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", `mbi31_homework_backup_${state.todayStr}.json`);
-    dlAnchorElem.click();
-    showToast('Резервная копия скачана!');
-  });
+  // Profile inputs & Save
+  const saveProfileBtn = document.getElementById('save-profile-btn');
+  if (saveProfileBtn) {
+    saveProfileBtn.addEventListener('click', () => {
+      const nameInput = document.getElementById('setting-student-name');
+      const groupInput = document.getElementById('setting-student-group');
+      const idInput = document.getElementById('setting-student-id');
+
+      const name = nameInput ? nameInput.value.trim() : state.student.name;
+      const group = groupInput ? groupInput.value.trim() : state.student.group;
+      const idNum = idInput ? idInput.value.trim() : state.student.idNum;
+
+      if (!name || !group) {
+        showToast('Заполните ФИО и группу');
+        return;
+      }
+
+      state.student = { ...state.student, name, group, idNum };
+      state.saveStudent();
+      updateStudentProfileUI();
+      showToast('Профиль студента сохранён');
+    });
+  }
+
+  // Add custom grade subject button
+  const addGradeBtn = document.getElementById('add-custom-grade-btn');
+  if (addGradeBtn) {
+    addGradeBtn.addEventListener('click', () => {
+      const subj = prompt('Введите название учебного предмета:');
+      if (!subj || !subj.trim()) return;
+      const newGrade = {
+        id: 'grade-' + Date.now(),
+        subject: subj.trim(),
+        teacher: 'Преподаватель ТОГУ',
+        controlType: 'Экзамен',
+        points: 75,
+        notes: ''
+      };
+      state.grades.push(newGrade);
+      state.saveGrades();
+      renderGradesView();
+      showToast('Предмет добавлен в БРС');
+    });
+  }
+
+  // Export JSON (Full Backup)
+  const exportBtn = document.getElementById('export-backup-btn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      const fullBackup = {
+        version: '2.0',
+        exportDate: new Date().toISOString(),
+        student: state.student,
+        homework: state.homework,
+        grades: state.grades,
+        subgroupFilter: state.subgroupFilter
+      };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullBackup, null, 2));
+      const dlAnchorElem = document.createElement('a');
+      dlAnchorElem.setAttribute("href", dataStr);
+      dlAnchorElem.setAttribute("download", `togu_diary_backup_${state.todayStr}.json`);
+      dlAnchorElem.click();
+      showToast('Полный бэкап дневника скачан');
+    });
+  }
 
   // Import JSON
   const importInput = document.getElementById('import-backup-file');
-  importInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  if (importInput) {
+    importInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const imported = JSON.parse(event.target.result);
-        if (Array.isArray(imported)) {
-          state.homework = imported;
-          state.saveHomework();
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (Array.isArray(imported)) {
+            // Legacy homework-only backup
+            state.homework = imported;
+            state.saveHomework();
+          } else if (imported && typeof imported === 'object') {
+            // Full diary backup
+            if (Array.isArray(imported.homework)) {
+              state.homework = imported.homework;
+              state.saveHomework();
+            }
+            if (Array.isArray(imported.grades)) {
+              state.grades = imported.grades;
+              state.saveGrades();
+            }
+            if (imported.student) {
+              state.student = { ...state.student, ...imported.student };
+              state.saveStudent();
+            }
+          }
           renderApp();
-          showToast('Данные успешно импортированы!');
-        } else {
-          alert('Некорректный формат файла бэкапа');
+          showToast('Данные успешно импортированы');
+        } catch (err) {
+          alert('Ошибка при чтении файла');
         }
-      } catch (err) {
-        alert('Ошибка при чтении файла');
-      }
-    };
-    reader.readAsText(file);
-  });
+      };
+      reader.readAsText(file);
+    });
+  }
 
   // Reset to default
-  document.getElementById('reset-data-btn').addEventListener('click', () => {
-    if (confirm('Сбросить все домашние задания к начальным примерам?')) {
-      state.homework = [...DEFAULT_HOMEWORK];
-      state.saveHomework();
-      renderApp();
-      showToast('Домашние задания сброшены');
+  const resetBtn = document.getElementById('reset-data-btn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      if (confirm('Сбросить все домашние задания и баллы к начальным примерам?')) {
+        state.homework = [...DEFAULT_HOMEWORK];
+        state.saveHomework();
+        state.grades = [...DEFAULT_GRADES];
+        state.saveGrades();
+        renderApp();
+        showToast('Данные сброшены к начальным');
+      }
+    });
+  }
+}
+
+// --- Student Profile UI Sync ---
+function updateStudentProfileUI() {
+  if (!state.student) return;
+  const s = state.student;
+
+  const headerStudent = document.getElementById('header-student-name');
+  if (headerStudent) headerStudent.textContent = s.name;
+
+  const headerGroup = document.getElementById('header-group-name');
+  if (headerGroup) headerGroup.textContent = s.group;
+
+  const sideName = document.getElementById('sidebar-student-name');
+  if (sideName) sideName.textContent = s.name;
+
+  const sideGroup = document.getElementById('sidebar-student-group');
+  if (sideGroup) sideGroup.textContent = s.group;
+
+  const sideCourse = document.getElementById('sidebar-student-course');
+  if (sideCourse) sideCourse.textContent = s.course || '3 курс';
+
+  const avatar = document.getElementById('sidebar-avatar-initials');
+  if (avatar && s.name) {
+    const parts = s.name.trim().split(/\s+/);
+    avatar.textContent = parts.map(p => p[0]).slice(0, 2).join('').toUpperCase();
+  }
+
+  const setStudentName = document.getElementById('setting-student-name');
+  if (setStudentName && setStudentName !== document.activeElement) setStudentName.value = s.name;
+
+  const setStudentGroup = document.getElementById('setting-student-group');
+  if (setStudentGroup && setStudentGroup !== document.activeElement) setStudentGroup.value = s.group;
+
+  const setStudentId = document.getElementById('setting-student-id');
+  if (setStudentId && setStudentId !== document.activeElement) setStudentId.value = s.idNum || '';
+}
+
+// --- Quick Export Tools (Print & iCalendar) ---
+function initQuickTools() {
+  const printBtn = document.getElementById('quick-print-btn');
+  if (printBtn) {
+    printBtn.addEventListener('click', printSchedule);
+  }
+
+  const icalBtn = document.getElementById('quick-ical-btn');
+  if (icalBtn) {
+    icalBtn.addEventListener('click', exportICalendar);
+  }
+}
+
+function printSchedule() {
+  window.print();
+}
+
+function exportICalendar() {
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//TOGU//Student Schedule Diary//RU',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-WR-CALNAME:Расписание ' + (state.student.group || 'ТОГУ')
+  ];
+
+  const daysMap = { 'mon': 'MO', 'tue': 'TU', 'wed': 'WE', 'thu': 'TH', 'fri': 'FR', 'sat': 'SA' };
+
+  SCHEDULE_DATA.forEach(pair => {
+    if (state.subgroupFilter !== 'all' && pair.subgroup !== 'all' && pair.subgroup !== state.subgroupFilter) {
+      return;
+    }
+
+    const tStart = pair.timeStart.replace(':', '') + '00';
+    const tEnd = pair.timeEnd.replace(':', '') + '00';
+    const byDay = daysMap[pair.day] || 'MO';
+
+    lines.push('BEGIN:VEVENT');
+    lines.push(`UID:${pair.id}-2026@togu.ru`);
+    lines.push(`DTSTAMP:20260901T000000Z`);
+    lines.push(`DTSTART;TZID=Asia/Vladivostok:20260901T${tStart}`);
+    lines.push(`DTEND;TZID=Asia/Vladivostok:20260901T${tEnd}`);
+    lines.push(`RRULE:FREQ=WEEKLY;UNTIL=20270131T235959Z;BYDAY=${byDay}`);
+    lines.push(`SUMMARY:[${pair.type === 'lecture' ? 'Лк' : 'Пр'}] ${pair.subject}`);
+    lines.push(`LOCATION:ТОГУ, ауд. ${pair.room}`);
+    lines.push(`DESCRIPTION:Преподаватель: ${pair.teacher}\\nГруппа: ${state.student.group}\\nТип: ${pair.week === 'numerator' ? 'Числитель' : (pair.week === 'denominator' ? 'Знаменатель' : 'Каждую неделю')}`);
+    lines.push('END:VEVENT');
+  });
+
+  lines.push('END:VCALENDAR');
+  const icsBlob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(icsBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `togu_schedule_${(state.student.group || 'mbi31').replace(/[^a-zA-Z0-9а-яА-Я]/g, '_')}.ics`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Календарь iCal (.ics) скачан');
+}
+
+// --- Desktop Keyboard Shortcuts ---
+function initDesktopKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // Ignore when typing inside input / textarea / select
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+    if (e.key === '1') {
+      switchView('view-schedule');
+    } else if (e.key === '2') {
+      switchView('view-homework');
+    } else if (e.key === '3') {
+      switchView('view-grades');
+    } else if (e.key === '/') {
+      e.preventDefault();
+      switchView('view-search');
+    } else if (e.key === '5') {
+      switchView('view-settings');
+    } else if (e.key === 'n' || e.key === 'N' || e.key === 'т' || e.key === 'Т') {
+      if (!e.ctrlKey && !e.metaKey) {
+        openHomeworkModal({ date: state.selectedDateStr });
+      }
     }
   });
 }
