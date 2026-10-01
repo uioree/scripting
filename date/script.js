@@ -8,12 +8,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // ------------------------------------------------------------------------
   // State
   // ------------------------------------------------------------------------
+  // Clean up any old test values
+  const storedNick = localStorage.getItem('date_nickname');
+  const validNick = (storedNick && !storedNick.toLowerCase().includes('суч')) ? storedNick : 'красотка';
+  localStorage.setItem('date_nickname', validNick);
+
   const state = {
     currentStep: 1,
     date: '2026-11-15',
     time: '18:00',
     venueTitle: localStorage.getItem('date_venue') || 'ми топаем в театррр',
-    nickname: localStorage.getItem('date_nickname') || 'сучка',
+    nickname: validNick,
     tgUsername: localStorage.getItem('date_tg_user') || '',
     soundEnabled: localStorage.getItem('date_sound') !== 'false',
     noDodgeCount: 0,
@@ -655,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnSaveSettings.addEventListener('click', () => {
     playLoveChime();
     state.venueTitle = customVenueInput.value.trim() || 'ми топаем в театррр';
-    state.nickname = customNicknameInput.value.trim() || 'сучка';
+    state.nickname = customNicknameInput.value.trim() || 'красотка';
     state.tgUsername = customTgUsername.value.trim();
 
     localStorage.setItem('date_venue', state.venueTitle);
