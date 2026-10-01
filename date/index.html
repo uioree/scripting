@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Приглашение на свидание! 💖</title>
+  
+  <!-- OpenGraph Meta Tags for Messenger Previews (Telegram, VK, WhatsApp) -->
+  <meta property="og:title" content="У тебя одно новое приглашение на свидание! 💌">
+  <meta property="og:description" content="Нажми, чтобы открыть самое милое приглашение на свете 🐶">
+  <meta property="og:image" content="assets/step1_pug.png">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#ffe4e6">
+
+  <!-- Cute Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700;800&family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient floating particles background -->
+  <div class="ambient-bg" id="ambientBg"></div>
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- Top Floating Controls -->
+  <div class="top-nav-controls">
+    <button class="icon-btn sound-toggle-btn" id="soundToggle" title="Звуки" aria-label="Включить / выключить звук">
+      <span class="icon" id="soundIcon">🔊</span>
+    </button>
+    <button class="icon-btn settings-toggle-btn" id="settingsToggle" title="Настроить текст" aria-label="Настройки">
+      <span class="icon">⚙️</span>
+    </button>
+  </div>
+
+  <!-- Main Container / Phone Mockup -->
+  <main class="app-wrapper">
+    <!-- Top hint text from screenshots -->
+    <header class="top-instruction-bar">
+      <p class="instruction-text">Нажимайте кнопки в превью — пройдите приглашение целиком</p>
+      <div class="progress-hearts" id="progressHearts">
+        <span class="step-dot active" data-step="1">🐾</span>
+        <span class="step-dot" data-step="2">❤️</span>
+        <span class="step-dot" data-step="3">⏰</span>
+        <span class="step-dot" data-step="4">🎬</span>
+        <span class="step-dot" data-step="5">✨</span>
+      </div>
+    </header>
+
+    <!-- Phone Frame -->
+    <div class="phone-frame">
+      <!-- Dynamic Island / Speaker notch -->
+      <div class="phone-notch">
+        <div class="camera-lens"></div>
+        <div class="speaker-pill"></div>
+      </div>
+
+      <!-- Cloud decorations inside phone bezel -->
+      <div class="cloud-deco cloud-1"></div>
+      <div class="cloud-deco cloud-2"></div>
+      <div class="cloud-deco cloud-3"></div>
+
+      <!-- Scalloped Cloud Card Container -->
+      <div class="scalloped-card" id="cardContainer">
+        
+        <!-- ==============================================
+             STEP 1: ты пойдешь со мной на свидание?
+        =============================================== -->
+        <section class="screen-step active" id="step1" data-step-index="1">
+          <div class="step-content">
+            <div class="image-wrapper cute-tilt-1">
+              <img src="assets/step1_pug.png" alt="Милый мопсик смотрит вверх" class="pug-photo" id="imgStep1">
+              <div class="floating-sticker heart-sticker-1">💖</div>
+            </div>
+
+            <h1 class="headline">ты пойдешь со мной на свидание?</h1>
+
+            <div class="buttons-area step1-buttons" id="step1ButtonsArea">
+              <button type="button" class="btn btn-primary btn-glow" id="btnYes1">
+                <span class="btn-text">Да</span>
+                <span class="btn-sparkle">✨</span>
+              </button>
+              
+              <button type="button" class="btn btn-secondary" id="btnNo1">
+                <span class="btn-text" id="btnNo1Text">Нет</span>
+              </button>
+            </div>
+            
+            <!-- Funny toast message when 'Нет' is clicked/dodged -->
+            <div class="playful-toast" id="noToast"></div>
+          </div>
+        </section>
+
+        <!-- ==============================================
+             STEP 2: подожди, ты действительно сказала да?
+        =============================================== -->
+        <section class="screen-step" id="step2" data-step-index="2">
+          <div class="step-content">
+            <div class="image-wrapper pulse-heart-img">
+              <img src="assets/step2_pugs.png" alt="Два щенка с сердечками" class="pug-photo" id="imgStep2">
+              <div class="floating-sticker heart-sticker-2">💕</div>
+              <div class="floating-sticker heart-sticker-3">🥰</div>
+            </div>
+
+            <h2 class="headline">подожди, ты действительно сказала да?</h2>
+            <p class="subheadline">Конефна конефна да</p>
+
+            <div class="buttons-area">
+              <button type="button" class="btn btn-primary btn-glow btn-heartbeat" id="btnYes2">
+                <span class="btn-text">Да Да дА</span>
+                <span class="btn-sparkle">💖</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================
+             STEP 3: будь готова к этому времени
+        =============================================== -->
+        <section class="screen-step" id="step3" data-step-index="3">
+          <div class="step-content">
+            <div class="image-wrapper sweater-dancers">
+              <img src="assets/step3_dancers.png" alt="Щенки в свитерках танцуют" class="pug-photo rounded-square" id="imgStep3">
+              <div class="floating-sticker heart-sticker-4">💌</div>
+            </div>
+
+            <h2 class="headline">будь готова к этому времени</h2>
+
+            <form class="time-form" id="timeForm" onsubmit="event.preventDefault();">
+              <div class="form-group">
+                <label for="dateInput" class="input-label">Дата</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">📅</span>
+                  <input type="date" id="dateInput" class="form-control" value="2026-11-15">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="timeInput" class="input-label">Время</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">⏰</span>
+                  <input type="time" id="timeInput" class="form-control" value="18:00">
+                </div>
+              </div>
+
+              <button type="button" class="btn btn-primary btn-glow" id="btnStep3Next">
+                <span class="btn-text">Что дальше ❤️</span>
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- ==============================================
+             STEP 4: чем займёмся?
+        =============================================== -->
+        <section class="screen-step" id="step4" data-step-index="4">
+          <div class="step-content">
+            <h2 class="headline">чем займёмся?</h2>
+            <p class="subheadline">Ща узнаешь</p>
+
+            <div class="options-grid">
+              <!-- Option 1: Right answer! -->
+              <div class="option-card card-correct" id="optMovie" data-choice="correct">
+                <div class="card-icon-bubble">
+                  <span class="card-icon">🎬</span>
+                </div>
+                <span class="card-title">Вот это</span>
+                <span class="card-badge-glow"></span>
+              </div>
+
+              <!-- Option 2: Wrong playful -->
+              <div class="option-card card-wrong" id="optLock" data-choice="wrong" data-msg="Не-а! За замком только тайна 🔐😉">
+                <div class="card-icon-bubble">
+                  <span class="card-icon">🔐</span>
+                </div>
+                <span class="card-title">Не это</span>
+              </div>
+
+              <!-- Option 3: Wrong playful -->
+              <div class="option-card card-wrong" id="optBasket" data-choice="wrong" data-msg="Пикник класс, но сейчас холодно! 🧺❄️">
+                <div class="card-icon-bubble">
+                  <span class="card-icon">🧺</span>
+                </div>
+                <span class="card-title">И не это</span>
+              </div>
+
+              <!-- Option 4: Wrong playful -->
+              <div class="option-card card-wrong" id="optSparkles" data-choice="wrong" data-msg="Магия будет, но жми 'Вот это'! ✨😆">
+                <div class="card-icon-bubble">
+                  <span class="card-icon">✨</span>
+                </div>
+                <span class="card-title">И точно не это</span>
+              </div>
+            </div>
+
+            <div class="playful-toast" id="step4Toast"></div>
+          </div>
+        </section>
+
+        <!-- ==============================================
+             STEP 5: ми топаем в театррр (Финал!)
+        =============================================== -->
+        <section class="screen-step" id="step5" data-step-index="5">
+          <div class="step-content finale-step">
+            
+            <!-- Stacked Polaroid Mini Cards -->
+            <div class="polaroid-stack">
+              <div class="polaroid-card polaroid-left">
+                <div class="polaroid-inner">
+                  <span class="polaroid-emoji">🍝</span>
+                </div>
+                <span class="polaroid-tape"></span>
+              </div>
+
+              <div class="polaroid-card polaroid-right">
+                <div class="polaroid-inner">
+                  <span class="polaroid-emoji">🎬</span>
+                </div>
+                <span class="polaroid-tape"></span>
+              </div>
+            </div>
+
+            <h2 class="headline finale-title" id="finalVenueTitle">ми топаем в театррр</h2>
+
+            <p class="final-datetime-line" id="finalDatetimeText">
+              Будь готова к <span class="highlight-date" id="finalDateFormatted">15 ноября 2026 г.</span> в <span class="highlight-time" id="finalTimeFormatted">18:00</span>, <span id="finalNickname">сучка</span>
+            </p>
+
+            <div class="finale-actions">
+              <!-- Telegram Confirmation Button -->
+              <a href="#" class="btn btn-telegram" id="btnShareTelegram" target="_blank" rel="noopener">
+                <span class="btn-icon">✈️</span>
+                <span class="btn-text">Сказать «Да» в Telegram</span>
+              </a>
+
+              <!-- Google Calendar Button -->
+              <a href="#" class="btn btn-calendar" id="btnAddToCalendar" target="_blank" rel="noopener">
+                <span class="btn-icon">📅</span>
+                <span class="btn-text">Добавить в календарь</span>
+              </a>
+
+              <!-- Restart Button -->
+              <button type="button" class="btn btn-text-only" id="btnRestart">
+                <span>🔄 Пройти ещё раз</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </div> <!-- /scalloped-card -->
+    </div> <!-- /phone-frame -->
+  </main>
+
+  <!-- ==============================================
+       SETTINGS DRAWER / MODAL
+  =============================================== -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">⚙️ Настройки приглашения</h3>
+        <button type="button" class="modal-close-btn" id="modalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="settings-hint">Вы можете изменить текст финала и дату под ваше настоящее свидание:</p>
+
+        <div class="form-group">
+          <label for="customVenueInput" class="input-label">Куда идём (заголовок финала):</label>
+          <input type="text" id="customVenueInput" class="form-control" value="ми топаем в театррр" placeholder="например: ми топаем в кинооо">
+        </div>
+
+        <div class="form-group">
+          <label for="customNicknameInput" class="input-label">Обращение в конце:</label>
+          <div class="preset-badges">
+            <button type="button" class="badge-opt" data-val="сучка">сучка</button>
+            <button type="button" class="badge-opt" data-val="любимая">любимая</button>
+            <button type="button" class="badge-opt" data-val="красотка">красотка</button>
+            <button type="button" class="badge-opt" data-val="принцесса">принцесса</button>
+            <button type="button" class="badge-opt" data-val="зайка">зайка</button>
+          </div>
+          <input type="text" id="customNicknameInput" class="form-control" value="сучка">
+        </div>
+
+        <div class="form-group">
+          <label for="customTgUsername" class="input-label">Ваш юзернейм в Telegram (необязательно):</label>
+          <input type="text" id="customTgUsername" class="form-control" placeholder="например: durov (без @)">
+          <small class="field-subtext">Если указать, кнопка в Telegram сразу откроет личный чат с вами!</small>
+        </div>
+
+        <button type="button" class="btn btn-primary" id="btnSaveSettings" style="width: 100%; margin-top: 10px;">
+          Сохранить настройки ✨
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
